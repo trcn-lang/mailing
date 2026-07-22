@@ -279,15 +279,22 @@
         // Initialisation
         async function init() {
             console.log("Initialisation du widget...");
+            console.log("window.grist disponible ?", !!window.grist);
             
             // Grist API
             if (window.grist) {
-                grist.ready();
-                
-                // Récupérer les projets
                 try {
-                    const projectsData = await grist.docApi.fetchTable('Projets');
-                    const contactsData = await grist.docApi.fetchTable('Contacts');
+                    console.log("Grist API détectée, appel grist.ready()");
+                    await grist.ready();
+                    console.log("grist.ready() effectué");
+                    
+                    // Utiliser l'API synchrone de Grist pour les custom widgets
+                    console.log("Récupération des tables...");
+                    const projectsData = await grist.docApi.fetchTable('Projet-_Mailing-Projets');
+                    const contactsData = await grist.docApi.fetchTable('Projet-_Mailing-Contacts');
+                    
+                    console.log("Projets reçus :", projectsData);
+                    console.log("Contacts reçus :", contactsData);
                     
                     state.projects = projectsData;
                     state.contacts = contactsData;
@@ -297,11 +304,15 @@
                     
                 } catch (error) {
                     console.error("Erreur lors du chargement des données :", error);
+                    console.error("Stack trace :", error.stack);
                     document.getElementById('noProjectSelected').innerText = 
-                        "Erreur : Impossible de charger les données. " + error.message;
+                        "Erreur : " + error.message + ". Essai du mode démo...";
+                    
+                    // Fallback sur les données de démo
+                    setTimeout(() => loadDemoData(), 1000);
                 }
             } else {
-                console.warn("Grist API non disponible - mode démo");
+                console.warn("Grist API non disponible - utilisation des données de démo");
                 loadDemoData();
             }
         }
@@ -381,19 +392,23 @@
             projectContacts.forEach(contact => {
                 const card = document.createElement('div');
                 card.className = 'contact-card';
+                
+                // Déterminer l'état "habilité"
+                const isHabilite = contact['Habilitation accordée'] && contact['Habilitation accordée'] !== 'En attente';
+                
                 card.innerHTML = `
                     <div class="contact-info">
                         <h3>${contact.Prénom || ''} ${contact.Nom || ''}</h3>
-                        <p>📧 ${contact.Email || 'N/A'}</p>
+                        <p>📧 ${contact.Mail || contact.Email || 'N/A'}</p>
                         <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
                     </div>
                     <div class="contact-actions">
                         <div class="checkbox-container">
-                            <input type="checkbox" id="check-${contact.id}" ${contact.Habilité ? 'checked' : ''} 
+                            <input type="checkbox" id="check-${contact.id}" ${isHabilite ? 'checked' : ''} 
                                    onchange="toggleHabilite(${contact.id})">
                             <label for="check-${contact.id}">Habilité</label>
                         </div>
-                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Email}', '${contact.Prénom}')">
+                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Mail || contact.Email}', '${contact.Prénom}')">
                             📧 Envoyer
                         </button>
                     </div>
@@ -428,11 +443,12 @@
             if (window.grist) {
                 try {
                     await grist.docApi.applyUserActions([[
-                        'UpdateRecord', 'Projets', state.currentProject.id, 
+                        'UpdateRecord', 'Projet-_Mailing-Projets', state.currentProject.id, 
                         { 'Message_HTML': messageText }
                     ]]);
                     alert('✅ Message enregistré !');
                 } catch (error) {
+                    console.error("Erreur lors de l'enregistrement :", error);
                     alert('❌ Erreur lors de l\'enregistrement : ' + error.message);
                 }
             } else {
@@ -457,14 +473,22 @@
         function toggleHabilite(contactId) {
             const contact = state.contacts.find(c => c.id === contactId);
             if (contact) {
-                contact.Habilité = !contact.Habilité;
+                const currentStatus = contact['Habilitation accordée'] || '';
+                const newStatus = (currentStatus && currentStatus !== 'En attente') ? 'En attente' : 'Niveau 1';
+                
+                contact['Habilitation accordée'] = newStatus;
                 
                 // Envoyer à Grist
                 if (window.grist) {
-                    grist.docApi.applyUserActions([[
-                        'UpdateRecord', 'Contacts', contactId,
-                        { 'Habilité': contact.Habilité }
-                    ]]);
+                    try {
+                        grist.docApi.applyUserActions([[
+                            'UpdateRecord', 'Projet-_Mailing-Contacts', contactId,
+                            { 'Habilitation accordée': newStatus }
+                        ]]);
+                        console.log("Statut mis à jour pour contact", contactId, ":", newStatus);
+                    } catch (error) {
+                        console.error("Erreur lors de la mise à jour :", error);
+                    }
                 }
             }
         }
