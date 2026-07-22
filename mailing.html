@@ -609,11 +609,11 @@
             try {
                 // Créer un nouveau template
                 await grist.docApi.applyUserActions([[
-                    'AddRecord', TABLE_TEMPLATES, [null], {
-                        Projet: [state.currentProject.id],
-                        Nom: [subjectText],
-                        Contenu_HTML: [messageText],
-                        Objet_Mail: [subjectText]
+                    'AddRecord', TABLE_TEMPLATES, null, {
+                        Projet: state.currentProject.id,
+                        Nom: subjectText,
+                        Contenu_HTML: messageText,
+                        Objet_Mail: subjectText
                     }
                 ]]);
                 alert('✅ Template "' + subjectText + '" créé avec succès !');
