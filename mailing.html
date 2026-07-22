@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Habilitation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #F5F5F5;
+            color: #3C3C3C;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #000091;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .panel h2 {
+            color: #000091;
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #F5F5F5;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #000091;
+            font-size: 14px;
+        }
+        
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #E5E5E5;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #0055CC;
+            box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #0055CC;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0047AB;
+        }
+        
+        .btn-secondary {
+            background-color: #F5F5F5;
+            color: #3C3C3C;
+            border: 1px solid #E5E5E5;
+            margin-right: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #E5E5E5;
+        }
+        
+        .contacts-list {
+            margin-top: 20px;
+        }
+        
+        .contact-card {
+            background: #F5F5F5;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #0055CC;
+        }
+        
+        .contact-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: #000091;
+        }
+        
+        .contact-info p {
+            font-size: 13px;
+            color: #656565;
+            margin: 2px 0;
+        }
+        
+        .contact-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .checkbox-container label {
+            margin: 0;
+            font-weight: 400;
+            cursor: pointer;
+        }
+        
+        .preview-section {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .preview-section h3 {
+            color: #000091;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-frame {
+            border: 1px solid #E5E5E5;
+            border-radius: 4px;
+            padding: 15px;
+            background: white;
+            font-size: 12px;
+        }
+        
+        .info-box {
+            background-color: #E3F2FD;
+            border-left: 4px solid #0055CC;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #656565;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Habilitation des Agents</h1>
+        
+        <div class="main-grid">
+            <!-- Colonne gauche : Sélection projet + message -->
+            <div class="panel">
+                <h2>📋 Configuration du Projet</h2>
+                
+                <div class="form-group">
+                    <label for="projectSelect">Sélectionner un projet :</label>
+                    <select id="projectSelect">
+                        <option value="">-- Choisir un projet --</option>
+                    </select>
+                </div>
+                
+                <div id="messageSection" style="display: none;">
+                    <div class="form-group">
+                        <label for="messageText">Message HTML à envoyer :</label>
+                        <textarea id="messageText" placeholder="Message HTML..."></textarea>
+                    </div>
+                    
+                    <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
+                    
+                    <div class="preview-section">
+                        <h3>Aperçu du message :</h3>
+                        <div class="preview-frame" id="messagePreview"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Colonne droite : Liste des contacts -->
+            <div class="panel">
+                <h2>👥 Agents à habiliter</h2>
+                
+                <div id="noProjectSelected" class="info-box">
+                    Sélectionnez un projet pour voir les agents inscrit(e)s.
+                </div>
+                
+                <div id="contactsSection" style="display: none;">
+                    <div class="info-box">
+                        <strong>Nombre d'agents :</strong> <span id="contactCount">0</span>
+                    </div>
+                    
+                    <div class="contacts-list" id="contactsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // État du widget
+        let state = {
+            projects: [],
+            contacts: [],
+            currentProject: null,
+            messages: {}
+        };
+        
+        // Initialisation
+        async function init() {
+            console.log("Initialisation du widget...");
+            
+            // Grist API
+            if (window.grist) {
+                grist.ready();
+                
+                // Récupérer les projets
+                try {
+                    const projectsData = await grist.docApi.fetchTable('Projets');
+                    const contactsData = await grist.docApi.fetchTable('Contacts');
+                    
+                    state.projects = projectsData;
+                    state.contacts = contactsData;
+                    
+                    // Remplir la liste des projets
+                    populateProjectSelect();
+                    
+                } catch (error) {
+                    console.error("Erreur lors du chargement des données :", error);
+                    document.getElementById('noProjectSelected').innerText = 
+                        "Erreur : Impossible de charger les données. " + error.message;
+                }
+            } else {
+                console.warn("Grist API non disponible - mode démo");
+                loadDemoData();
+            }
+        }
+        
+        // Données de démo (pour tester sans Grist)
+        function loadDemoData() {
+            state.projects = [
+                { id: 1, Projet: 'Projet A', Message_HTML: '<h1>Bienvenue au Projet A</h1>' },
+                { id: 2, Projet: 'Projet B', Message_HTML: '<h1>Bienvenue au Projet B</h1>' }
+            ];
+            
+            state.contacts = [
+                { id: 1, Nom: 'MARTIN', Prénom: 'Jean', Email: 'jean.martin@example.com', Projet: 'Projet A', Habilité: false },
+                { id: 2, Nom: 'DUPONT', Prénom: 'Marie', Email: 'marie.dupont@example.com', Projet: 'Projet A', Habilité: false },
+                { id: 3, Nom: 'DURAND', Prénom: 'Paul', Email: 'paul.durand@example.com', Projet: 'Projet B', Habilité: false }
+            ];
+            
+            populateProjectSelect();
+        }
+        
+        // Remplir le dropdown des projets
+        function populateProjectSelect() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">-- Choisir un projet --</option>';
+            
+            state.projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.Projet || project.id;
+                option.textContent = project.Projet || `Projet ${project.id}`;
+                select.appendChild(option);
+            });
+        }
+        
+        // Changement de projet
+        document.getElementById('projectSelect').addEventListener('change', function(e) {
+            const projectName = e.target.value;
+            
+            if (!projectName) {
+                state.currentProject = null;
+                document.getElementById('messageSection').style.display = 'none';
+                document.getElementById('contactsSection').style.display = 'none';
+                document.getElementById('noProjectSelected').style.display = 'block';
+                return;
+            }
+            
+            state.currentProject = state.projects.find(p => (p.Projet || p.id) === projectName);
+            
+            if (state.currentProject) {
+                // Afficher le message
+                document.getElementById('messageText').value = state.currentProject.Message_HTML || '';
+                updateMessagePreview();
+                document.getElementById('messageSection').style.display = 'block';
+                document.getElementById('noProjectSelected').style.display = 'none';
+                
+                // Afficher les contacts du projet
+                displayContacts(projectName);
+            }
+        });
+        
+        // Afficher les contacts du projet sélectionné
+        function displayContacts(projectName) {
+            const projectContacts = state.contacts.filter(c => c.Projet === projectName);
+            const contactsList = document.getElementById('contactsList');
+            const contactCount = document.getElementById('contactCount');
+            
+            contactCount.textContent = projectContacts.length;
+            contactsList.innerHTML = '';
+            
+            if (projectContacts.length === 0) {
+                contactsList.innerHTML = '<p style="text-align: center; color: #656565;">Aucun agent inscrit pour ce projet.</p>';
+                document.getElementById('contactsSection').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('contactsSection').style.display = 'block';
+            
+            projectContacts.forEach(contact => {
+                const card = document.createElement('div');
+                card.className = 'contact-card';
+                card.innerHTML = `
+                    <div class="contact-info">
+                        <h3>${contact.Prénom || ''} ${contact.Nom || ''}</h3>
+                        <p>📧 ${contact.Email || 'N/A'}</p>
+                        <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
+                    </div>
+                    <div class="contact-actions">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="check-${contact.id}" ${contact.Habilité ? 'checked' : ''} 
+                                   onchange="toggleHabilite(${contact.id})">
+                            <label for="check-${contact.id}">Habilité</label>
+                        </div>
+                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Email}', '${contact.Prénom}')">
+                            📧 Envoyer
+                        </button>
+                    </div>
+                `;
+                contactsList.appendChild(card);
+            });
+        }
+        
+        // Mettre à jour l'aperçu du message
+        function updateMessagePreview() {
+            const messageText = document.getElementById('messageText').value;
+            const preview = document.getElementById('messagePreview');
+            
+            if (messageText.trim().startsWith('<')) {
+                // C'est du HTML
+                preview.innerHTML = messageText;
+            } else {
+                // C'est du texte brut
+                preview.innerHTML = `<p>${messageText.replace(/\n/g, '<br>')}</p>`;
+            }
+        }
+        
+        // Enregistrer le message
+        async function saveMessage() {
+            const messageText = document.getElementById('messageText').value;
+            
+            if (!state.currentProject) return;
+            
+            state.currentProject.Message_HTML = messageText;
+            
+            // Envoyer à Grist pour mise à jour
+            if (window.grist) {
+                try {
+                    await grist.docApi.applyUserActions([[
+                        'UpdateRecord', 'Projets', state.currentProject.id, 
+                        { 'Message_HTML': messageText }
+                    ]]);
+                    alert('✅ Message enregistré !');
+                } catch (error) {
+                    alert('❌ Erreur lors de l\'enregistrement : ' + error.message);
+                }
+            } else {
+                alert('✅ Message enregistré (mode démo)');
+            }
+        }
+        
+        // Envoyer un email
+        function sendEmail(email, prenom) {
+            const message = document.getElementById('messageText').value;
+            
+            // Créer le lien mailto
+            const subject = encodeURIComponent('Habilitation Agent');
+            const body = encodeURIComponent(message);
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+            
+            window.open(mailtoLink);
+            alert(`📧 Email ouvert pour ${prenom}. Veuillez l'envoyer manuellement.`);
+        }
+        
+        // Mettre à jour le statut "Habilité"
+        function toggleHabilite(contactId) {
+            const contact = state.contacts.find(c => c.id === contactId);
+            if (contact) {
+                contact.Habilité = !contact.Habilité;
+                
+                // Envoyer à Grist
+                if (window.grist) {
+                    grist.docApi.applyUserActions([[
+                        'UpdateRecord', 'Contacts', contactId,
+                        { 'Habilité': contact.Habilité }
+                    ]]);
+                }
+            }
+        }
+        
+        // Gestion du préview du message en temps réel
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('messageText');
+            if (textarea) {
+                textarea.addEventListener('input', updateMessagePreview);
+            }
+        });
+        
+        // Initialiser au chargement
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
