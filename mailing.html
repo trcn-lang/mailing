@@ -197,7 +197,8 @@
         // ------------------------------------------------------------------
         const TABLE_PROJETS = 'Projets';
         const TABLE_CONTACTS = 'Contacts';
-        const COL_HABILITATION = 'Habilité';
+        const COL_HABILITATION_TEXT = 'Habilitation accordée';  // ← Texte à afficher
+        const COL_HABILITE_BOOL = 'Habilité';                   // ← Booléen pour la checkbox
         const COL_MESSAGE = 'Message_HTML';
         const COL_SUBJECT = 'Objet_Mail';
 
@@ -460,14 +461,18 @@
                 const card = document.createElement('div');
                 card.className = 'contact-card';
 
-                const isHabilite = contact[COL_HABILITATION] === true;
+                // Affichage texte de "Habilitation accordée"
+                const habilitationText = contact[COL_HABILITATION_TEXT] || 'Non renseigné';
+                
+                // Checkbox liée au booléen "Habilité"
+                const isHabilite = contact[COL_HABILITE_BOOL] === true;
 
                 card.innerHTML = `
                     <div class="contact-info">
                         <h3>${contact['Prénom'] || ''} ${contact.Nom || ''}</h3>
                         <p>📧 ${contact.Mail || 'N/A'}</p>
                         <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
-                        <p>Habilitation accordée : ${isHabilite ? 'Oui' : 'Non'}</p>
+                        <p>Habilitation accordée : ${habilitationText}</p>
                     </div>
                     <div class="contact-actions">
                         <div class="checkbox-container">
@@ -525,13 +530,13 @@
             const contact = state.contacts.find(c => c.id === contactId);
             if (!contact) return;
 
-            const newStatus = !contact[COL_HABILITATION];
-            contact[COL_HABILITATION] = newStatus;
+            const newStatus = !contact[COL_HABILITE_BOOL];
+            contact[COL_HABILITE_BOOL] = newStatus;
 
             try {
                 await grist.docApi.applyUserActions([[
                     'UpdateRecord', TABLE_CONTACTS, contactId,
-                    { [COL_HABILITATION]: newStatus }
+                    { [COL_HABILITE_BOOL]: newStatus }
                 ]]);
                 console.log("Habilité mis à jour pour", contactId, ":", newStatus);
             } catch (error) {
