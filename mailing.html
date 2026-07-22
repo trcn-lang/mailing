@@ -1,1 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Habilitation</title>
+    <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F5F5F5; color: #3C3C3C; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #000091; margin-bottom: 30px; font-size: 32px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .panel h2 { color: #000091; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #F5F5F5; padding-bottom: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #000091; font-size: 13px; }
+        select, input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #E5E5E5; border-radius: 4px; font-family: inherit; font-size: 13px; }
+        select:focus, input[type="text"]:focus, textarea:focus { outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); }
+        
+        .left-column { display: flex; flex-direction: column; gap: 20px; }
+        .right-column { display: flex; flex-direction: column; gap: 20px; }
+        
+        .editor-area { display: flex; flex-direction: column; height: 350px; }
+        .editor-textarea { flex: 1; resize: none; font-family: inherit; font-size: 13px; padding: 10px; }
+        
+        .button { display: inline-block; padding: 10px 20px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-primary { background-color: #0055CC; color: white; }
+        .btn-primary:hover { background-color: #0047AB; }
+        .btn-secondary { background-color: #F5F5F5; color: #3C3C3C; border: 1px solid #E5E5E5; }
+        .btn-secondary:hover { background-color: #E5E5E5; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-success:hover { background-color: #45a049; }
+        .btn-small { padding: 6px 12px; font-size: 11px; }
+        .button-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        
+        .contacts-list { max-height: 400px; overflow-y: auto; }
+        .contact-card { background: #F5F5F5; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #0055CC; font-size: 12px; }
+        .contact-card.selected { background: #E3F2FD; }
+        .contact-info h3 { font-size: 13px; margin-bottom: 2px; color: #000091; }
+        .contact-info p { font-size: 11px; color: #656565; margin: 1px 0; }
+        .contact-actions { display: flex; gap: 6px; align-items: center; }
+        .checkbox-container { display: flex; align-items: center; gap: 6px; }
+        .checkbox-container input { width: 16px; height: 16px; cursor: pointer; }
+        
+        .info-box { background-color: #E3F2FD; border-left: 4px solid #0055CC; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; }
+        .error-box { background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; color: #C62828; }
+        .loading { text-align: center; padding: 20px; color: #656565; font-size: 13px; }
+        .bulk-actions { background: #F5F5F5; padding: 10px; border-radius: 4px; border-left: 3px solid #FCB02D; margin-bottom: 12px; }
+        
+        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Habilitation des Agents</h1>
 
+        <div class="main-grid">
+            <!-- COLONNE 1 : CONFIG + ÉDITEUR TEMPLATE -->
+            <div class="left-column">
+                <!-- CONFIG -->
+                <div class="panel">
+                    <h2>📋 Configuration</h2>
+                    <div id="loadingMessage" class="loading">⏳ Chargement...</div>
+                    <div id="errorMessage" style="display: none;"></div>
+
+                    <div id="configSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="projectSelect">Projet :</label>
+                            <select id="projectSelect"></select>
+                        </div>
+
+                        <div id="messageSection" style="display: none;">
+                            <div class="form-group">
+                                <label for="templateSelect">Template :</label>
+                                <select id="templateSelect"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="subjectText">Objet du mail :</label>
+                                <input type="text" id="subjectText" />
+                            </div>
+
+                            <div class="button-group">
+                                <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
+                                <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ÉDITEUR TEMPLATE -->
+                <div class="panel">
+                    <h2>✍️ Éditer Template</h2>
+                    <div id="editorSection" style="display: none;">
+                        <div class="editor-area">
+                            <textarea id="messageText" class="editor-textarea" placeholder="Contenu du template..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLONNE 2 : ACTIONS MAIL + AGENTS -->
+            <div class="right-column">
+                <!-- ACTIONS MAIL -->
+                <div class="panel">
+                    <h2>📧 Actions Mail</h2>
+                    <div id="bulkActionsSection" class="bulk-actions" style="display: none;">
+                        <button class="button btn-success btn-small" onclick="sendGroupEmail()">📧 Groupé</button>
+                        <button class="button btn-secondary btn-small" onclick="previewEmail()">👁️ Aperçu</button>
+                        <div style="font-size: 11px; margin-top: 8px; color: #666;">
+                            Sélectionnés : <span id="selectedCount">0</span>
+                        </div>
+                    </div>
+                    <div id="noActionSelected" class="info-box">Sélectionnez des agents</div>
+                </div>
+
+                <!-- AGENTS -->
+                <div class="panel">
+                    <h2>👥 Agents</h2>
+                    <div id="noProjectSelected" class="info-box">Sélectionnez un projet</div>
+
+                    <div id="contactsSection" style="display: none;">
+                        <div class="info-box">
+                            Total : <span id="contactCount">0</span>
+                        </div>
+                        <div class="contacts-list" id="contactsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TABLE_PROJETS = 'Projets';
+        const TABLE_CONTACTS = 'Contacts';
+        const TABLE_TEMPLATES = 'Templates';
+        const COL_HABILITATION = 'Habilitation_accordee';
+        const COL_HABILITE = 'Habilite';
+
+        let state = {
+            projects: [], contacts: [], templates: [],
+            currentProject: null, currentTemplateId: null,
+            selectedContacts: new Set(),
+            gristReady: false
+        };
+
+        function columnsToRows(colData) {
+            const keys = Object.keys(colData);
+            const rowCount = colData.id ? colData.id.length : (colData[keys[0]] || []).length;
+            const rows = [];
+            for (let i = 0; i < rowCount; i++) {
+                const row = {};
+                keys.forEach(key => {
+                    let value = colData[key][i];
+                    if (Array.isArray(value) && value.length > 0) value = value[0];
+                    row[key] = value;
+                });
+                rows.push(row);
+            }
+            return rows;
+        }
+
+        function loadGristScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error("API Grist indisponible"));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function initGrist() {
+            try {
+                await loadGristScript('https://grist.numerique.gouv.fr/grist-plugin-api.js');
+                if (!window.grist) throw new Error("API Grist non disponible");
+                await grist.ready({ requiredAccess: 'full' });
+                state.gristReady = true;
+
+                const projects = columnsToRows(await grist.docApi.fetchTable(TABLE_PROJETS));
+                const contacts = columnsToRows(await grist.docApi.fetchTable(TABLE_CONTACTS));
+                const templates = columnsToRows(await grist.docApi.fetchTable(TABLE_TEMPLATES));
+
+                state.projects = projects;
+                state.contacts = contacts;
+                state.templates = templates;
+
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('configSection').style.display = 'block';
+                populateProjects();
+
+            } catch (error) {
+                document.getElementById('loadingMessage').style.display = 'none';
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.className = 'error-box';
+                errorDiv.innerHTML = '❌ ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function populateProjects() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">-- Choisir --</option>';
+            state.projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.Projet;
+                select.appendChild(opt);
+            });
+        }
+
+        function populateTemplates(projectId) {
+            const select = document.getElementById('templateSelect');
+            const temps = state.templates.filter(t => t.Projet === projectId);
+            select.innerHTML = '<option value="">-- Nouveau --</option>';
+            temps.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.Nom || 'Template ' + t.id;
+                select.appendChild(opt);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('projectSelect').addEventListener('change', (e) => {
+                const projId = parseInt(e.target.value);
+                if (!projId) {
+                    state.currentProject = null;
+                    document.getElementById('messageSection').style.display = 'none';
+                    document.getElementById('editorSection').style.display = 'none';
+                    document.getElementById('contactsSection').style.display = 'none';
+                    return;
+                }
+
+                state.currentProject = state.projects.find(p => p.id === projId);
+                state.currentTemplateId = null;
+                state.selectedContacts.clear();
+
+                document.getElementById('messageText').value = '';
+                document.getElementById('subjectText').value = '';
+                document.getElementById('btnSave').style.display = 'none';
+                document.getElementById('messageSection').style.display = 'block';
+                document.getElementById('editorSection').style.display = 'block';
+
+                populateTemplates(projId);
+                displayContacts(projId);
+            });
+
+            document.getElementById('templateSelect').addEventListener('change', (e) => {
+                const tempId = parseInt(e.target.value);
+                if (!tempId) {
+                    state.currentTemplateId = null;
+                    document.getElementById('btnSave').style.display = 'none';
+                    document.getElementById('messageText').value = '';
+                    return;
+                }
+
+                const temp = state.templates.find(t => t.id === tempId);
+                if (temp) {
+                    state.currentTemplateId = tempId;
+                    document.getElementById('messageText').value = temp.Contenu_HTML || '';
+                    document.getElementById('subjectText').value = temp.Objet_Mail || '';
+                    document.getElementById('btnSave').style.display = 'inline-block';
+                }
+            });
+
+            initGrist();
+        });
+
+        function displayContacts(projId) {
+            const contacts = state.contacts.filter(c => c.Projet === projId);
+            const list = document.getElementById('contactsList');
+            list.innerHTML = '';
+
+            if (contacts.length === 0) {
+                document.getElementById('contactsSection').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('contactsSection').style.display = 'block';
+            document.getElementById('contactCount').textContent = contacts.length;
+
+            contacts.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'contact-card' + (state.selectedContacts.has(c.id) ? ' selected' : '');
+                card.id = 'card-' + c.id;
+
+                const hab = c[COL_HABILITATION] || '';
+                const chk = c[COL_HABILITE] === true;
+
+                card.innerHTML = '<div style="flex: 1; display: flex; gap: 8px; align-items: center;">' +
+                    '<input type="checkbox" id="sel-' + c.id + '" ' + (state.selectedContacts.has(c.id) ? 'checked' : '') + ' onchange="toggleSelect(' + c.id + ')">' +
+                    '<div class="contact-info" style="min-width: 0;">' +
+                    '<h3>' + (c.Prénom || '') + ' ' + (c.Nom || '') + '</h3>' +
+                    '<p>📧 ' + (c.Mail || 'N/A') + '</p>' +
+                    '<p>' + hab + '</p>' +
+                    '</div></div>' +
+                    '<div class="contact-actions">' +
+                    '<input type="checkbox" id="hab-' + c.id + '" ' + (chk ? 'checked' : '') + ' onchange="toggleHab(' + c.id + ')" title="Habilité">' +
+                    '<button class="button btn-small btn-primary" onclick="sendOne(' + c.id + ')">📧</button>' +
+                    '</div>';
+                list.appendChild(card);
+            });
+        }
+
+        function toggleSelect(id) {
+            if (state.selectedContacts.has(id)) {
+                state.selectedContacts.delete(id);
+                document.getElementById('card-' + id).classList.remove('selected');
+            } else {
+                state.selectedContacts.add(id);
+                document.getElementById('card-' + id).classList.add('selected');
+            }
+            document.getElementById('selectedCount').textContent = state.selectedContacts.size;
+            document.getElementById('bulkActionsSection').style.display = state.selectedContacts.size > 0 ? 'block' : 'none';
+            document.getElementById('noActionSelected').style.display = state.selectedContacts.size > 0 ? 'none' : 'block';
+        }
+
+        async function toggleHab(id) {
+            const c = state.contacts.find(x => x.id === id);
+            if (!c) return;
+            const newVal = !c[COL_HABILITE];
+            c[COL_HABILITE] = newVal;
+            try {
+                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_CONTACTS, id, { [COL_HABILITE]: newVal }]]);
+            } catch (e) { console.error(e); }
+        }
+
+        function sendOne(id) {
+            const c = state.contacts.find(x => x.id === id);
+            if (c) sendEmail(c.Mail);
+        }
+
+        function sendEmail(email) {
+            const subj = document.getElementById('subjectText').value;
+            const link = 'mailto:' + email + '?subject=' + encodeURIComponent(subj);
+            window.open(link);
+        }
+
+        function sendGroupEmail() {
+            const emails = [];
+            state.selectedContacts.forEach(id => {
+                const c = state.contacts.find(x => x.id === id);
+                if (c && c.Mail) emails.push(c.Mail);
+            });
+            if (emails.length === 0) { alert('❌ Aucun email'); return; }
+            const subj = document.getElementById('subjectText').value;
+            const link = 'mailto:' + emails.join(';') + '?subject=' + encodeURIComponent(subj);
+            window.open(link);
+        }
+
+        function previewEmail() {
+            const subj = document.getElementById('subjectText').value;
+            alert('👁️ Aperçu\n\nObjet : ' + subj + '\nDestinataires : ' + state.selectedContacts.size + ' agents');
+        }
+
+        async function saveMessage() {
+            if (!state.currentTemplateId) { alert('❌ Aucun template'); return; }
+            const content = document.getElementById('messageText').value;
+            const subj = document.getElementById('subjectText').value;
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
+            try {
+                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_TEMPLATES, state.currentTemplateId, { Contenu_HTML: content, Objet_Mail: subj }]]);
+                alert('✅ Mis à jour !');
+            } catch (e) { alert('❌ Erreur : ' + e.message); }
+        }
+
+        async function saveMessageAs() {
+            const content = document.getElementById('messageText').value;
+            const subj = document.getElementById('subjectText').value;
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
+            if (!subj.trim()) { alert('❌ Nom vide'); return; }
+            if (!state.currentProject) { alert('❌ Projet'); return; }
+            try {
+                await grist.docApi.applyUserActions([['AddRecord', TABLE_TEMPLATES, null, { Projet: state.currentProject.id, Nom: subj, Contenu_HTML: content, Objet_Mail: subj }]]);
+                alert('✅ Créé !');
+                const temps = columnsToRows(await grist.docApi.fetchTable(TABLE_TEMPLATES));
+                state.templates = temps;
+                populateTemplates(state.currentProject.id);
+            } catch (e) { alert('❌ Erreur : ' + e.message); }
+        }
+    </script>
+</body>
+</html>
