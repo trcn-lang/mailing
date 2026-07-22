@@ -208,9 +208,6 @@
     </div>
 
     <script>
-        // ------------------------------------------------------------------
-        // CONFIGURATION
-        // ------------------------------------------------------------------
         const TABLE_PROJETS = 'Projets';
         const TABLE_CONTACTS = 'Contacts';
         const TABLE_TEMPLATES = 'Templates';
@@ -234,7 +231,6 @@
                 const row = {};
                 keys.forEach(key => {
                     let value = colData[key][i];
-                    // Si c'est une liste (référence Grist), prendre le premier élément
                     if (Array.isArray(value) && value.length > 0) {
                         value = value[0];
                     }
@@ -257,7 +253,6 @@
 
         async function initGrist() {
             console.log("Initialisation Grist...");
-
             try {
                 await loadGristScript(window.__gristApiUrl);
             } catch (loadError) {
@@ -338,10 +333,6 @@
             });
         }
 
-        // ==================================================================
-        // ÉDITEUR WYSIWYG
-        // ==================================================================
-        
         function insertTag(tag, labelIfEmpty) {
             const textarea = document.getElementById('messageText');
             const start = textarea.selectionStart;
@@ -404,10 +395,6 @@
                 alert('❌ Erreur lors de la copie : ' + err);
             });
         }
-
-        // ==================================================================
-        // ÉVÉNEMENTS ET INIT
-        // ==================================================================
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('projectSelect').addEventListener('change', function(e) {
@@ -602,10 +589,9 @@
             try {
                 console.log("Création template avec Projet ID:", state.currentProject.id);
                 
-                // Créer un nouveau template
                 await grist.docApi.applyUserActions([[
                     'AddRecord', TABLE_TEMPLATES, [null], {
-                        Projet: [[state.currentProject.id]],  // ← référence = liste avec ID
+                        Projet: [[state.currentProject.id]],
                         Nom: [templateName],
                         Contenu_HTML: [messageText],
                         Objet_Mail: [templateName]
@@ -613,7 +599,6 @@
                 ]]);
                 alert('✅ Template "' + templateName + '" créé avec succès !');
                 
-                // Recharger les templates
                 const templatesRaw = await grist.docApi.fetchTable(TABLE_TEMPLATES);
                 state.templates = columnsToRows(templatesRaw);
                 populateTemplateSelect(state.currentProject.id);
