@@ -165,7 +165,12 @@
                         </div>
 
                         <div class="button-group">
-                            <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
+                            <button id="btnSave" class="button btn-primary" onclick="saveMessage()" style="display: none;">
+                                💾 Enregistrer
+                            </button>
+                            <button class="button btn-primary" onclick="saveMessageAs()">
+                                💾 Enregistrer sous...
+                            </button>
                         </div>
 
                         <div id="copyFeedback" style="display:none; margin-top:10px;" class="success-box">
@@ -201,6 +206,9 @@
                         <button class="button btn-success btn-small" onclick="sendGroupEmail()">
                             📧 Envoyer email groupé aux sélectionnés
                         </button>
+                        <button class="button btn-secondary btn-small" onclick="previewAndSend()">
+                            👁️ Aperçu
+                        </button>
                     </div>
                 </div>
             </div>
@@ -224,6 +232,7 @@
             contacts: [],
             templates: [],
             currentProject: null,
+            currentTemplateId: null,  // ← Tracker le template sélectionné
             selectedContacts: new Set(),
             gristReady: false,
             hasMessageColumn: true,
@@ -432,8 +441,10 @@
                 state.currentProject = state.projects.find(p => p.Projet === projectName);
 
                 if (state.currentProject) {
+                    state.currentTemplateId = null;  // ← Réinitialiser
                     document.getElementById('messageText').value = '';
                     document.getElementById('subjectText').value = '';
+                    document.getElementById('btnSave').style.display = 'none';  // ← Masquer le bouton
                     populateTemplateSelect(state.currentProject.id);
                     updateMessagePreview();
                     document.getElementById('messageSection').style.display = 'block';
@@ -449,10 +460,18 @@
                 if (templateId) {
                     const template = state.templates.find(t => t.id === templateId);
                     if (template) {
+                        state.currentTemplateId = templateId;  // ← Tracker
                         document.getElementById('messageText').value = template.Contenu_HTML || '';
                         document.getElementById('subjectText').value = template.Objet_Mail || template.Nom || '';
                         updateMessagePreview();
+                        
+                        // Afficher le bouton "Enregistrer"
+                        document.getElementById('btnSave').style.display = 'inline-block';
                     }
+                } else {
+                    state.currentTemplateId = null;
+                    // Masquer le bouton "Enregistrer"
+                    document.getElementById('btnSave').style.display = 'none';
                 }
             });
 
@@ -519,6 +538,9 @@
                         <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Mail}', '${(contact['Prénom']||'').replace(/'/g,"\\'")}')">
                             📧 Envoyer
                         </button>
+                        <button class="button btn-small btn-secondary" onclick="previewAndSend()">
+                            👁️ Aperçu
+                        </button>
                     </div>
                 `;
                 contactsList.appendChild(card);
@@ -560,8 +582,67 @@
             const message = document.getElementById('messageText').value;
             const subject = document.getElementById('subjectText').value;
             
+            // Envoyer le contenu HTML directement (Option B)
             const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
             window.open(mailtoLink);
+        }
+
+        function previewAndSend() {
+            const message = document.getElementById('messageText').value;
+            const subject = document.getElementById('subjectText').value;
+            
+            // Ouvrir un aperçu HTML dans une nouvelle fenêtre
+            const previewWindow = window.open('', 'preview', 'width=800,height=600');
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${subject}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+                        .container { background: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
+                        .header { border-bottom: 2px solid #000091; padding-bottom: 15px; margin-bottom: 20px; }
+                        .subject { font-size: 18px; font-weight: bold; color: #000091; }
+                        .content { line-height: 1.6; color: #333; }
+                        .actions { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
+                        button { padding: 10px 20px; margin-right: 10px; cursor: pointer; border: none; border-radius: 4px; }
+                        .btn-copy { background: #4CAF50; color: white; }
+                        .btn-copy:hover { background: #45a049; }
+                        .code-block { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: monospace; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div class="subject">Objet : ${subject}</div>
+                        </div>
+                        <div class="content">
+                            ${message}
+                        </div>
+                        <div class="actions">
+                            <button class="btn-copy" onclick="copyHTML()">📋 Copier le HTML</button>
+                            <p style="font-size: 12px; color: #666;">
+                                ✅ Vous pouvez copier le HTML ci-dessus et le coller dans votre messagerie (Insérer → HTML).
+                            </p>
+                        </div>
+                        <div class="code-block" id="htmlCode" style="display: none;">
+                            <strong>Code HTML :</strong><br>
+                            <textarea style="width: 100%; height: 200px; font-family: monospace;">${message}</textarea>
+                        </div>
+                    </div>
+                    <script>
+                        function copyHTML() {
+                            const textarea = document.querySelector('textarea');
+                            textarea.select();
+                            document.execCommand('copy');
+                            alert('✅ HTML copié dans le presse-papiers !');
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+            previewWindow.document.write(htmlContent);
         }
 
         function sendGroupEmail() {
@@ -594,7 +675,35 @@
             const messageText = document.getElementById('messageText').value;
             const subjectText = document.getElementById('subjectText').value;
 
-            if (!state.currentProject) return;
+            if (!state.currentTemplateId) {
+                alert('❌ Aucun template sélectionné');
+                return;
+            }
+
+            if (!messageText.trim()) {
+                alert('❌ Le message ne peut pas être vide');
+                return;
+            }
+
+            try {
+                // Mettre à jour le template existant
+                await grist.docApi.applyUserActions([[
+                    'UpdateRecord', TABLE_TEMPLATES, state.currentTemplateId, {
+                        Contenu_HTML: messageText,
+                        Objet_Mail: subjectText
+                    }
+                ]]);
+                alert('✅ Template mis à jour avec succès !');
+                
+            } catch (error) {
+                console.error(error);
+                alert('❌ Erreur : ' + error.message);
+            }
+        }
+
+        async function saveMessageAs() {
+            const messageText = document.getElementById('messageText').value;
+            const subjectText = document.getElementById('subjectText').value;
 
             if (!messageText.trim()) {
                 alert('❌ Le message ne peut pas être vide');
