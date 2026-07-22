@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Widget Habilitation</title>
-    <!-- Le script grist-plugin-api.js est chargé dynamiquement (voir <script> plus bas) -->
-    <script>
-        window.__gristApiUrl = "https://grist.numerique.gouv.fr/grist-plugin-api.js";
-    </script>
+    <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -23,21 +20,38 @@
         .panel h2 { color: #000091; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #F5F5F5; padding-bottom: 10px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: 600; margin-bottom: 8px; color: #000091; font-size: 14px; }
-        select, textarea {
+        input[type="text"], textarea {
             width: 100%; padding: 12px; border: 1px solid #E5E5E5; border-radius: 4px;
             font-family: inherit; font-size: 14px;
         }
-        select:focus, textarea:focus {
+        input[type="text"]:focus, textarea:focus {
             outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1);
         }
         textarea { resize: vertical; min-height: 200px; font-family: monospace; font-size: 12px; }
+        
+        .editor-toolbar {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; padding-bottom: 10px;
+            border-bottom: 1px solid #E5E5E5;
+        }
+        .editor-btn {
+            padding: 8px 12px; border: 1px solid #E5E5E5; background: white; border-radius: 4px;
+            cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s;
+        }
+        .editor-btn:hover { background: #F5F5F5; border-color: #0055CC; color: #0055CC; }
+        .editor-btn.active { background: #0055CC; color: white; border-color: #0055CC; }
+        
         .button {
             display: inline-block; padding: 12px 24px; border: none; border-radius: 4px;
             font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.3s;
         }
         .btn-primary { background-color: #0055CC; color: white; }
         .btn-primary:hover { background-color: #0047AB; }
+        .btn-secondary { background-color: #F5F5F5; color: #3C3C3C; border: 1px solid #E5E5E5; margin-right: 10px; }
+        .btn-secondary:hover { background-color: #E5E5E5; }
         .btn-small { padding: 8px 12px; font-size: 12px; }
+        
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        
         .contacts-list { margin-top: 20px; }
         .contact-card {
             background: #F5F5F5; padding: 15px; margin-bottom: 12px; border-radius: 4px;
@@ -50,12 +64,14 @@
         .checkbox-container { display: flex; align-items: center; gap: 8px; }
         .checkbox-container input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .checkbox-container label { margin: 0; font-weight: 400; cursor: pointer; }
+        
         .preview-section {
             background: white; border: 1px solid #E5E5E5; border-radius: 4px; padding: 15px;
             margin-top: 20px; max-height: 400px; overflow-y: auto;
         }
         .preview-section h3 { color: #000091; font-size: 14px; margin-bottom: 10px; }
         .preview-frame { border: 1px solid #E5E5E5; border-radius: 4px; padding: 15px; background: white; font-size: 12px; }
+        
         .info-box {
             background-color: #E3F2FD; border-left: 4px solid #0055CC; padding: 15px;
             margin-bottom: 20px; border-radius: 4px; font-size: 13px;
@@ -68,7 +84,12 @@
             background-color: #FFF8E3; border-left: 4px solid #FCB02D; padding: 15px;
             margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #7A5A00;
         }
+        .success-box {
+            background-color: #E8F5E9; border-left: 4px solid #4CAF50; padding: 15px;
+            margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #2E7D32;
+        }
         .loading { text-align: center; padding: 40px 20px; color: #656565; }
+        
         @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -87,7 +108,7 @@
                 <div id="configSection" style="display: none;">
                     <div class="form-group">
                         <label for="projectSelect">Sélectionner un projet :</label>
-                        <select id="projectSelect">
+                        <select id="projectSelect" style="width:100%; padding:12px; border:1px solid #E5E5E5; border-radius:4px; font-size:14px;">
                             <option value="">-- Choisir un projet --</option>
                         </select>
                     </div>
@@ -95,14 +116,54 @@
                     <div id="messageSection" style="display: none;">
                         <div id="noMessageColumnWarning" class="warning-box" style="display:none;">
                             ⚠️ La table "Projets" n'a pas de colonne <strong>Message_HTML</strong>.
-                            Ajoutez-la dans Grist (type "Texte long") pour pouvoir enregistrer le message.
+                            Ajoutez-la dans Grist (type "Texte long") pour enregistrer le message.
                         </div>
+                        
+                        <div id="noSubjectColumnWarning" class="warning-box" style="display:none;">
+                            ⚠️ La table "Projets" n'a pas de colonne <strong>Objet_Mail</strong>.
+                            Ajoutez-la dans Grist (type "Texte") pour enregistrer l'objet du mail.
+                        </div>
+
+                        <!-- Champ Objet du mail -->
                         <div class="form-group">
-                            <label for="messageText">Message HTML à envoyer :</label>
+                            <label for="subjectText">Objet du mail :</label>
+                            <input type="text" id="subjectText" placeholder="Ex: Habilitation Agent - Projet A" />
+                        </div>
+
+                        <!-- Éditeur avec toolbar WYSIWYG -->
+                        <div class="form-group">
+                            <label>Message HTML à envoyer :</label>
+                            <div class="editor-toolbar">
+                                <button class="editor-btn" onclick="insertTag('b', 'Gras')" title="Gras">
+                                    <strong>G</strong>
+                                </button>
+                                <button class="editor-btn" onclick="insertTag('i', 'Italique')" title="Italique">
+                                    <em>I</em>
+                                </button>
+                                <button class="editor-btn" onclick="insertHeading()" title="Titre">
+                                    H1
+                                </button>
+                                <button class="editor-btn" onclick="insertLink()" title="Lien">
+                                    🔗 Lien
+                                </button>
+                                <button class="editor-btn" onclick="insertList()" title="Liste">
+                                    ☰ Liste
+                                </button>
+                                <div style="flex-grow: 1;"></div>
+                                <button class="editor-btn" onclick="copyToClipboard()" style="background: #4CAF50; color: white; border-color: #4CAF50;">
+                                    📋 Copier HTML
+                                </button>
+                            </div>
                             <textarea id="messageText" placeholder="Message HTML..."></textarea>
                         </div>
 
-                        <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
+                        <div class="button-group">
+                            <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
+                        </div>
+
+                        <div id="copyFeedback" style="display:none; margin-top:10px;" class="success-box">
+                            ✅ HTML copié dans le presse-papiers ! Collez-le dans votre messagerie (Insérer → HTML).
+                        </div>
 
                         <div class="preview-section">
                             <h3>Aperçu du message :</h3>
@@ -132,27 +193,24 @@
 
     <script>
         // ------------------------------------------------------------------
-        // CONFIGURATION - Noms EXACTS des tables et colonnes dans Grist
+        // CONFIGURATION
         // ------------------------------------------------------------------
         const TABLE_PROJETS = 'Projets';
         const TABLE_CONTACTS = 'Contacts';
-
-        // Colonnes réelles (confirmées via export CSV) :
-        // Contacts : Projet, Nom, Prénom, Structure, Fonction, RIO, Mail, "Habilitation accordée"
-        // Projets  : Projet, Lien, "Lien Projet"  (PAS de colonne Message_HTML pour l'instant)
-        const COL_HABILITATION = 'Habilitation accordée';
-        const COL_MESSAGE = 'Message_HTML'; // à créer dans la table Projets si absente
+        const COL_HABILITATION = 'Habilité';
+        const COL_MESSAGE = 'Message_HTML';
+        const COL_SUBJECT = 'Objet_Mail';
 
         let state = {
             projects: [],
             contacts: [],
             currentProject: null,
             gristReady: false,
-            hasMessageColumn: true
+            hasMessageColumn: true,
+            hasSubjectColumn: true
         };
 
-        // Convertit le format colonne-orienté renvoyé par fetchTable
-        // { id: [1,2], Nom: ["A","B"], ... } en tableau de lignes [{id:1,Nom:"A"},...]
+        // Convertir format colonne-orienté en tableau de lignes
         function columnsToRows(colData) {
             const keys = Object.keys(colData);
             const rowCount = colData.id ? colData.id.length : (colData[keys[0]] || []).length;
@@ -165,8 +223,7 @@
             return rows;
         }
 
-        // Charge dynamiquement le script grist-plugin-api.js et remonte une vraie erreur
-        // (404, réseau bloqué, etc.) au lieu d'un simple "grist is not defined".
+        // Charger dynamiquement le script Grist
         function loadGristScript(url) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -177,7 +234,7 @@
                 };
                 script.onerror = (e) => {
                     console.error("Échec du chargement du script:", url, e);
-                    reject(new Error("Impossible de charger " + url + " (404, CORS, ou réseau bloqué)"));
+                    reject(new Error("Impossible de charger " + url));
                 };
                 document.head.appendChild(script);
             });
@@ -190,20 +247,12 @@
             try {
                 await loadGristScript(window.__gristApiUrl);
             } catch (loadError) {
-                showError(
-                    loadError.message +
-                    "<br><br>👉 Testez directement dans un nouvel onglet : " +
-                    "<a href='" + window.__gristApiUrl + "' target='_blank'>" + window.__gristApiUrl + "</a>" +
-                    "<br>Si ça renvoie une erreur 404 ou du HTML, l'URL du script est incorrecte pour votre instance Grist."
-                );
+                showError(loadError.message);
                 return;
             }
 
             if (!window.grist) {
-                showError(
-                    "Le script s'est chargé mais window.grist reste indéfini. " +
-                    "Le fichier chargé n'est peut-être pas le bon script (vérifiez son contenu à l'URL ci-dessus)."
-                );
+                showError("Le script Grist n'a pas défini window.grist.");
                 return;
             }
 
@@ -212,35 +261,30 @@
                 console.log("grist.ready() OK");
                 state.gristReady = true;
 
-                console.log(`Récupération de la table "${TABLE_PROJETS}"...`);
                 const projectsRaw = await grist.docApi.fetchTable(TABLE_PROJETS);
-                console.log("Réponse brute Projets:", projectsRaw);
-
-                console.log(`Récupération de la table "${TABLE_CONTACTS}"...`);
                 const contactsRaw = await grist.docApi.fetchTable(TABLE_CONTACTS);
-                console.log("Réponse brute Contacts:", contactsRaw);
 
                 const projects = columnsToRows(projectsRaw);
                 const contacts = columnsToRows(contactsRaw);
 
                 console.log("Projets convertis:", projects);
                 console.log("Contacts convertis:", contacts);
-                console.log("Exemple valeur brute de la colonne Projet (1er contact):", contacts[0] && contacts[0].Projet, typeof (contacts[0] && contacts[0].Projet));
 
-                // Vérifier si la colonne Message_HTML existe
                 state.hasMessageColumn = Object.keys(projectsRaw).includes(COL_MESSAGE);
+                state.hasSubjectColumn = Object.keys(projectsRaw).includes(COL_SUBJECT);
+
                 if (!state.hasMessageColumn) {
-                    console.warn(`Colonne "${COL_MESSAGE}" absente de la table "${TABLE_PROJETS}".`);
+                    console.warn(`Colonne "${COL_MESSAGE}" absente.`);
+                }
+                if (!state.hasSubjectColumn) {
+                    console.warn(`Colonne "${COL_SUBJECT}" absente.`);
                 }
 
                 loadData(projects, contacts);
 
             } catch (error) {
                 console.error("Erreur Grist:", error);
-                showError(
-                    "Impossible de charger les données depuis Grist : " + error.message +
-                    ". Vérifiez que les tables s'appellent bien \"" + TABLE_PROJETS + "\" et \"" + TABLE_CONTACTS + "\"."
-                );
+                showError("Impossible de charger les données : " + error.message);
             }
         }
 
@@ -253,6 +297,9 @@
 
             if (!state.hasMessageColumn) {
                 document.getElementById('noMessageColumnWarning').style.display = 'block';
+            }
+            if (!state.hasSubjectColumn) {
+                document.getElementById('noSubjectColumnWarning').style.display = 'block';
             }
 
             populateProjectSelect();
@@ -278,6 +325,77 @@
             });
         }
 
+        // ==================================================================
+        // ÉDITEUR WYSIWYG
+        // ==================================================================
+        
+        function insertTag(tag, labelIfEmpty) {
+            const textarea = document.getElementById('messageText');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const text = selectedText || labelIfEmpty;
+            const before = `<${tag}>`;
+            const after = `</${tag}>`;
+            
+            textarea.value = textarea.value.substring(0, start) + before + text + after + textarea.value.substring(end);
+            textarea.selectionStart = start + before.length;
+            textarea.selectionEnd = start + before.length + text.length;
+            textarea.focus();
+            updateMessagePreview();
+        }
+
+        function insertHeading() {
+            const textarea = document.getElementById('messageText');
+            const start = textarea.selectionStart;
+            const text = textarea.value.substring(start, textarea.selectionEnd) || 'Titre';
+            const heading = '\n<h2>' + text + '</h2>\n';
+            
+            textarea.value = textarea.value.substring(0, start) + heading + textarea.value.substring(textarea.selectionEnd);
+            textarea.selectionStart = start + 4;
+            textarea.focus();
+            updateMessagePreview();
+        }
+
+        function insertLink() {
+            const textarea = document.getElementById('messageText');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end) || 'Lien';
+            const url = prompt('URL du lien :', 'https://');
+            if (url === null) return;
+            
+            const link = '<a href="' + url + '">' + selectedText + '</a>';
+            textarea.value = textarea.value.substring(0, start) + link + textarea.value.substring(end);
+            textarea.focus();
+            updateMessagePreview();
+        }
+
+        function insertList() {
+            const textarea = document.getElementById('messageText');
+            const start = textarea.selectionStart;
+            const list = '\n<ul>\n  <li>Élément 1</li>\n  <li>Élément 2</li>\n  <li>Élément 3</li>\n</ul>\n';
+            
+            textarea.value = textarea.value.substring(0, start) + list + textarea.value.substring(textarea.selectionEnd);
+            textarea.focus();
+            updateMessagePreview();
+        }
+
+        function copyToClipboard() {
+            const messageText = document.getElementById('messageText').value;
+            navigator.clipboard.writeText(messageText).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+            }).catch(err => {
+                alert('❌ Erreur lors de la copie : ' + err);
+            });
+        }
+
+        // ==================================================================
+        // ÉVÉNEMENTS ET INIT
+        // ==================================================================
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('projectSelect').addEventListener('change', function(e) {
                 const projectName = e.target.value;
@@ -294,18 +412,20 @@
 
                 if (state.currentProject) {
                     document.getElementById('messageText').value = state.currentProject[COL_MESSAGE] || '';
+                    document.getElementById('subjectText').value = state.currentProject[COL_SUBJECT] || 'Habilitation Agent';
                     updateMessagePreview();
                     document.getElementById('messageSection').style.display = 'block';
                     document.getElementById('noProjectSelected').style.display = 'none';
 
-                    // Important : la colonne "Projet" dans Contacts est une référence,
-                    // donc stockée comme l'id numérique de la ligne dans Projets, pas comme texte.
                     displayContacts(state.currentProject.id);
                 }
             });
 
             document.getElementById('messageText').addEventListener('input', updateMessagePreview);
+            document.getElementById('subjectText').addEventListener('input', updateMessagePreview);
 
+            // Script Grist
+            window.__gristApiUrl = "https://grist.numerique.gouv.fr/grist-plugin-api.js";
             initGrist();
         });
 
@@ -321,8 +441,6 @@
         }
 
         function displayContacts(projectRowId) {
-            // Un contact référence son projet par l'id numérique de la ligne (colonne Référence),
-            // donc on compare contact.Projet (nombre) à projectRowId (nombre).
             const projectContacts = state.contacts.filter(c => c.Projet === projectRowId);
             const contactsList = document.getElementById('contactsList');
             const contactCount = document.getElementById('contactCount');
@@ -342,15 +460,14 @@
                 const card = document.createElement('div');
                 card.className = 'contact-card';
 
-                const statut = contact[COL_HABILITATION] || '';
-                const isHabilite = statut && statut.toLowerCase() !== 'en attente';
+                const isHabilite = contact[COL_HABILITATION] === true;
 
                 card.innerHTML = `
                     <div class="contact-info">
                         <h3>${contact['Prénom'] || ''} ${contact.Nom || ''}</h3>
                         <p>📧 ${contact.Mail || 'N/A'}</p>
                         <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
-                        <p>Statut : ${statut || 'Non renseigné'}</p>
+                        <p>Habilitation accordée : ${isHabilite ? 'Oui' : 'Non'}</p>
                     </div>
                     <div class="contact-actions">
                         <div class="checkbox-container">
@@ -369,32 +486,38 @@
 
         function sendEmail(email, prenom) {
             const message = document.getElementById('messageText').value;
-            const subject = encodeURIComponent('Habilitation Agent');
-            const body = encodeURIComponent(message);
-            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+            const subject = document.getElementById('subjectText').value;
+            
+            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
             window.open(mailtoLink);
         }
 
         async function saveMessage() {
             const messageText = document.getElementById('messageText').value;
+            const subjectText = document.getElementById('subjectText').value;
+
             if (!state.currentProject) return;
 
-            if (!state.hasMessageColumn) {
-                alert('❌ La colonne "' + COL_MESSAGE + '" n\'existe pas dans la table "' + TABLE_PROJETS + '". Ajoutez-la dans Grist avant de sauvegarder.');
+            if (!state.hasMessageColumn && !state.hasSubjectColumn) {
+                alert('❌ Les colonnes "' + COL_MESSAGE + '" et "' + COL_SUBJECT + '" n\'existent pas. Ajoutez-les dans Grist.');
                 return;
             }
 
             state.currentProject[COL_MESSAGE] = messageText;
+            state.currentProject[COL_SUBJECT] = subjectText;
+
+            const updates = {};
+            if (state.hasMessageColumn) updates[COL_MESSAGE] = messageText;
+            if (state.hasSubjectColumn) updates[COL_SUBJECT] = subjectText;
 
             try {
                 await grist.docApi.applyUserActions([[
-                    'UpdateRecord', TABLE_PROJETS, state.currentProject.id,
-                    { [COL_MESSAGE]: messageText }
+                    'UpdateRecord', TABLE_PROJETS, state.currentProject.id, updates
                 ]]);
-                alert('✅ Message enregistré !');
+                alert('✅ Message et objet enregistrés !');
             } catch (error) {
                 console.error(error);
-                alert('❌ Erreur lors de l\'enregistrement : ' + error.message);
+                alert('❌ Erreur : ' + error.message);
             }
         }
 
@@ -402,9 +525,7 @@
             const contact = state.contacts.find(c => c.id === contactId);
             if (!contact) return;
 
-            const currentStatus = contact[COL_HABILITATION] || '';
-            const newStatus = (currentStatus && currentStatus.toLowerCase() !== 'en attente') ? 'En attente' : 'Niveau 1';
-
+            const newStatus = !contact[COL_HABILITATION];
             contact[COL_HABILITATION] = newStatus;
 
             try {
@@ -412,7 +533,7 @@
                     'UpdateRecord', TABLE_CONTACTS, contactId,
                     { [COL_HABILITATION]: newStatus }
                 ]]);
-                console.log("Statut mis à jour pour", contactId, ":", newStatus);
+                console.log("Habilité mis à jour pour", contactId, ":", newStatus);
             } catch (error) {
                 console.error("Erreur lors de la mise à jour du statut:", error);
             }
