@@ -425,8 +425,8 @@
                 state.currentProject = state.projects.find(p => p.Projet === projectName);
 
                 if (state.currentProject) {
-                    document.getElementById('messageText').value = state.currentProject[COL_MESSAGE] || '';
-                    document.getElementById('subjectText').value = state.currentProject[COL_SUBJECT] || state.currentProject.Projet;
+                    document.getElementById('messageText').value = '';
+                    document.getElementById('subjectText').value = '';
                     populateTemplateSelect(projectName);
                     updateMessagePreview();
                     document.getElementById('messageSection').style.display = 'block';
@@ -443,6 +443,7 @@
                     const template = state.templates.find(t => t.id === templateId);
                     if (template) {
                         document.getElementById('messageText').value = template.Contenu_HTML || '';
+                        document.getElementById('subjectText').value = template.Objet_Mail || template.Nom || '';
                         updateMessagePreview();
                     }
                 }
@@ -588,18 +589,33 @@
 
             if (!state.currentProject) return;
 
-            state.currentProject[COL_MESSAGE] = messageText;
-            state.currentProject[COL_SUBJECT] = subjectText;
+            if (!messageText.trim()) {
+                alert('❌ Le message ne peut pas être vide');
+                return;
+            }
 
-            const updates = {};
-            if (state.hasMessageColumn) updates[COL_MESSAGE] = messageText;
-            if (state.hasSubjectColumn) updates[COL_SUBJECT] = subjectText;
+            if (!subjectText.trim()) {
+                alert('❌ Veuillez donner un nom au template (objet du mail)');
+                return;
+            }
 
             try {
+                // Créer un nouveau template
                 await grist.docApi.applyUserActions([[
-                    'UpdateRecord', TABLE_PROJETS, state.currentProject.id, updates
+                    'AddRecord', TABLE_TEMPLATES, [null], {
+                        Projet: [state.currentProject.id],
+                        Nom: [subjectText],
+                        Contenu_HTML: [messageText],
+                        Objet_Mail: [subjectText]
+                    }
                 ]]);
-                alert('✅ Message et objet enregistrés !');
+                alert('✅ Template "' + subjectText + '" créé avec succès !');
+                
+                // Recharger les templates
+                const templatesRaw = await grist.docApi.fetchTable(TABLE_TEMPLATES);
+                state.templates = columnsToRows(templatesRaw);
+                populateTemplateSelect(state.currentProject.Projet);
+                
             } catch (error) {
                 console.error(error);
                 alert('❌ Erreur : ' + error.message);
