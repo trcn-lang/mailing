@@ -236,7 +236,14 @@
             const rows = [];
             for (let i = 0; i < rowCount; i++) {
                 const row = {};
-                keys.forEach(key => { row[key] = colData[key][i]; });
+                keys.forEach(key => {
+                    let value = colData[key][i];
+                    // Si c'est une liste (référence Grist), prendre le premier élément
+                    if (Array.isArray(value) && value.length > 0) {
+                        value = value[0];
+                    }
+                    row[key] = value;
+                });
                 rows.push(row);
             }
             return rows;
@@ -325,9 +332,9 @@
             });
         }
 
-        function populateTemplateSelect(projectName) {
+        function populateTemplateSelect(projectRowId) {
             const select = document.getElementById('templateSelect');
-            const projectTemplates = state.templates.filter(t => t.Projet === projectName);
+            const projectTemplates = state.templates.filter(t => t.Projet === projectRowId);
 
             select.innerHTML = '<option value="">-- Aucun template --</option>';
             projectTemplates.forEach(template => {
@@ -427,7 +434,7 @@
                 if (state.currentProject) {
                     document.getElementById('messageText').value = '';
                     document.getElementById('subjectText').value = '';
-                    populateTemplateSelect(projectName);
+                    populateTemplateSelect(state.currentProject.id);
                     updateMessagePreview();
                     document.getElementById('messageSection').style.display = 'block';
                     document.getElementById('noProjectSelected').style.display = 'none';
@@ -614,7 +621,7 @@
                 // Recharger les templates
                 const templatesRaw = await grist.docApi.fetchTable(TABLE_TEMPLATES);
                 state.templates = columnsToRows(templatesRaw);
-                populateTemplateSelect(state.currentProject.Projet);
+                populateTemplateSelect(state.currentProject.id);
                 
             } catch (error) {
                 console.error(error);
