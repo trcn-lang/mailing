@@ -225,6 +225,7 @@
 
                 console.log("Projets convertis:", projects);
                 console.log("Contacts convertis:", contacts);
+                console.log("Exemple valeur brute de la colonne Projet (1er contact):", contacts[0] && contacts[0].Projet, typeof (contacts[0] && contacts[0].Projet));
 
                 // Vérifier si la colonne Message_HTML existe
                 state.hasMessageColumn = Object.keys(projectsRaw).includes(COL_MESSAGE);
@@ -297,7 +298,9 @@
                     document.getElementById('messageSection').style.display = 'block';
                     document.getElementById('noProjectSelected').style.display = 'none';
 
-                    displayContacts(projectName);
+                    // Important : la colonne "Projet" dans Contacts est une référence,
+                    // donc stockée comme l'id numérique de la ligne dans Projets, pas comme texte.
+                    displayContacts(state.currentProject.id);
                 }
             });
 
@@ -317,8 +320,10 @@
             }
         }
 
-        function displayContacts(projectName) {
-            const projectContacts = state.contacts.filter(c => c.Projet === projectName);
+        function displayContacts(projectRowId) {
+            // Un contact référence son projet par l'id numérique de la ligne (colonne Référence),
+            // donc on compare contact.Projet (nombre) à projectRowId (nombre).
+            const projectContacts = state.contacts.filter(c => c.Projet === projectRowId);
             const contactsList = document.getElementById('contactsList');
             const contactCount = document.getElementById('contactCount');
 
