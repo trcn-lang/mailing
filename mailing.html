@@ -10,15 +10,19 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F5F5F5; color: #3C3C3C; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #000091; margin-bottom: 30px; font-size: 32px; }
-        .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .panel h2 { color: #000091; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #F5F5F5; padding-bottom: 8px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: #000091; font-size: 13px; }
-        select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid #E5E5E5; border-radius: 4px; font-family: inherit; font-size: 13px; }
-        select:focus, input[type="text"]:focus { outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); }
+        select, input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #E5E5E5; border-radius: 4px; font-family: inherit; font-size: 13px; }
+        select:focus, input[type="text"]:focus, textarea:focus { outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); }
         
+        .left-column { display: flex; flex-direction: column; gap: 20px; }
         .right-column { display: flex; flex-direction: column; gap: 20px; }
+        
+        .editor-area { display: flex; flex-direction: column; height: 350px; }
+        .editor-textarea { flex: 1; resize: none; font-family: inherit; font-size: 13px; padding: 10px; }
         
         .button { display: inline-block; padding: 10px 20px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; }
         .btn-primary { background-color: #0055CC; color: white; }
@@ -52,32 +56,45 @@
         <h1>🔐 Habilitation des Agents</h1>
 
         <div class="main-grid">
-            <!-- COLONNE 1 : CONFIG -->
-            <div class="panel">
-                <h2>📋 Configuration</h2>
-                <div id="loadingMessage" class="loading">⏳ Chargement...</div>
-                <div id="errorMessage" style="display: none;"></div>
+            <!-- COLONNE 1 : CONFIG + ÉDITEUR TEMPLATE -->
+            <div class="left-column">
+                <!-- CONFIG -->
+                <div class="panel">
+                    <h2>📋 Configuration</h2>
+                    <div id="loadingMessage" class="loading">⏳ Chargement...</div>
+                    <div id="errorMessage" style="display: none;"></div>
 
-                <div id="configSection" style="display: none;">
-                    <div class="form-group">
-                        <label for="projectSelect">Projet :</label>
-                        <select id="projectSelect"></select>
+                    <div id="configSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="projectSelect">Projet :</label>
+                            <select id="projectSelect"></select>
+                        </div>
+
+                        <div id="messageSection" style="display: none;">
+                            <div class="form-group">
+                                <label for="templateSelect">Template :</label>
+                                <select id="templateSelect"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="subjectText">Objet du mail :</label>
+                                <input type="text" id="subjectText" />
+                            </div>
+
+                            <div class="button-group">
+                                <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
+                                <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div id="messageSection" style="display: none;">
-                        <div class="form-group">
-                            <label for="templateSelect">Template :</label>
-                            <select id="templateSelect"></select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="subjectText">Objet du mail :</label>
-                            <input type="text" id="subjectText" />
-                        </div>
-
-                        <div class="button-group">
-                            <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
-                            <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
+                <!-- ÉDITEUR TEMPLATE -->
+                <div class="panel">
+                    <h2>✍️ Éditer Template</h2>
+                    <div id="editorSection" style="display: none;">
+                        <div class="editor-area">
+                            <textarea id="messageText" class="editor-textarea" placeholder="Contenu du template..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -211,6 +228,7 @@
                 if (!projId) {
                     state.currentProject = null;
                     document.getElementById('messageSection').style.display = 'none';
+                    document.getElementById('editorSection').style.display = 'none';
                     document.getElementById('contactsSection').style.display = 'none';
                     return;
                 }
@@ -219,9 +237,11 @@
                 state.currentTemplateId = null;
                 state.selectedContacts.clear();
 
+                document.getElementById('messageText').value = '';
                 document.getElementById('subjectText').value = '';
                 document.getElementById('btnSave').style.display = 'none';
                 document.getElementById('messageSection').style.display = 'block';
+                document.getElementById('editorSection').style.display = 'block';
 
                 populateTemplates(projId);
                 displayContacts(projId);
@@ -232,12 +252,14 @@
                 if (!tempId) {
                     state.currentTemplateId = null;
                     document.getElementById('btnSave').style.display = 'none';
+                    document.getElementById('messageText').value = '';
                     return;
                 }
 
                 const temp = state.templates.find(t => t.id === tempId);
                 if (temp) {
                     state.currentTemplateId = tempId;
+                    document.getElementById('messageText').value = temp.Contenu_HTML || '';
                     document.getElementById('subjectText').value = temp.Objet_Mail || '';
                     document.getElementById('btnSave').style.display = 'inline-block';
                 }
@@ -330,25 +352,28 @@
 
         function previewEmail() {
             const subj = document.getElementById('subjectText').value;
-            alert('👁️ Aperçu du mail groupé\n\nObjet : ' + subj + '\nDestinataires : ' + state.selectedContacts.size + ' agents');
+            alert('👁️ Aperçu\n\nObjet : ' + subj + '\nDestinataires : ' + state.selectedContacts.size + ' agents');
         }
 
         async function saveMessage() {
             if (!state.currentTemplateId) { alert('❌ Aucun template'); return; }
+            const content = document.getElementById('messageText').value;
             const subj = document.getElementById('subjectText').value;
-            if (!subj.trim()) { alert('❌ Objet vide'); return; }
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
             try {
-                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_TEMPLATES, state.currentTemplateId, { Objet_Mail: subj }]]);
+                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_TEMPLATES, state.currentTemplateId, { Contenu_HTML: content, Objet_Mail: subj }]]);
                 alert('✅ Mis à jour !');
             } catch (e) { alert('❌ Erreur : ' + e.message); }
         }
 
         async function saveMessageAs() {
+            const content = document.getElementById('messageText').value;
             const subj = document.getElementById('subjectText').value;
-            if (!subj.trim()) { alert('❌ Objet vide'); return; }
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
+            if (!subj.trim()) { alert('❌ Nom vide'); return; }
             if (!state.currentProject) { alert('❌ Projet'); return; }
             try {
-                await grist.docApi.applyUserActions([['AddRecord', TABLE_TEMPLATES, null, { Projet: state.currentProject.id, Nom: subj, Objet_Mail: subj }]]);
+                await grist.docApi.applyUserActions([['AddRecord', TABLE_TEMPLATES, null, { Projet: state.currentProject.id, Nom: subj, Contenu_HTML: content, Objet_Mail: subj }]]);
                 alert('✅ Créé !');
                 const temps = columnsToRows(await grist.docApi.fetchTable(TABLE_TEMPLATES));
                 state.templates = temps;
