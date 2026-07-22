@@ -20,11 +20,11 @@
         .panel h2 { color: #000091; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #F5F5F5; padding-bottom: 10px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: 600; margin-bottom: 8px; color: #000091; font-size: 14px; }
-        input[type="text"], textarea {
+        input[type="text"], select, textarea {
             width: 100%; padding: 12px; border: 1px solid #E5E5E5; border-radius: 4px;
             font-family: inherit; font-size: 14px;
         }
-        input[type="text"]:focus, textarea:focus {
+        input[type="text"]:focus, select:focus, textarea:focus {
             outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1);
         }
         textarea { resize: vertical; min-height: 200px; font-family: monospace; font-size: 12px; }
@@ -48,9 +48,11 @@
         .btn-primary:hover { background-color: #0047AB; }
         .btn-secondary { background-color: #F5F5F5; color: #3C3C3C; border: 1px solid #E5E5E5; margin-right: 10px; }
         .btn-secondary:hover { background-color: #E5E5E5; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-success:hover { background-color: #45a049; }
         .btn-small { padding: 8px 12px; font-size: 12px; }
         
-        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
         
         .contacts-list { margin-top: 20px; }
         .contact-card {
@@ -58,6 +60,7 @@
             display: flex; justify-content: space-between; align-items: center;
             border-left: 4px solid #0055CC;
         }
+        .contact-card.selected { background: #E3F2FD; border-left-color: #0055CC; }
         .contact-info h3 { font-size: 16px; margin-bottom: 4px; color: #000091; }
         .contact-info p { font-size: 13px; color: #656565; margin: 2px 0; }
         .contact-actions { display: flex; gap: 10px; align-items: center; }
@@ -90,6 +93,12 @@
         }
         .loading { text-align: center; padding: 40px 20px; color: #656565; }
         
+        .bulk-actions {
+            background: #F5F5F5; padding: 15px; border-radius: 4px; margin-top: 20px;
+            border-left: 4px solid #FCB02D;
+        }
+        .bulk-actions-title { font-weight: 600; color: #000091; margin-bottom: 10px; }
+        
         @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -114,20 +123,18 @@
                     </div>
 
                     <div id="messageSection" style="display: none;">
-                        <div id="noMessageColumnWarning" class="warning-box" style="display:none;">
-                            ⚠️ La table "Projets" n'a pas de colonne <strong>Message_HTML</strong>.
-                            Ajoutez-la dans Grist (type "Texte long") pour enregistrer le message.
-                        </div>
-                        
-                        <div id="noSubjectColumnWarning" class="warning-box" style="display:none;">
-                            ⚠️ La table "Projets" n'a pas de colonne <strong>Objet_Mail</strong>.
-                            Ajoutez-la dans Grist (type "Texte") pour enregistrer l'objet du mail.
+                        <!-- Sélection template -->
+                        <div class="form-group">
+                            <label for="templateSelect">Sélectionner un template :</label>
+                            <select id="templateSelect" style="width:100%; padding:12px; border:1px solid #E5E5E5; border-radius:4px; font-size:14px;">
+                                <option value="">-- Aucun template --</option>
+                            </select>
                         </div>
 
                         <!-- Champ Objet du mail -->
                         <div class="form-group">
                             <label for="subjectText">Objet du mail :</label>
-                            <input type="text" id="subjectText" placeholder="Ex: Habilitation Agent - Projet A" />
+                            <input type="text" id="subjectText" placeholder="Ex: Habilitation Agent" />
                         </div>
 
                         <!-- Éditeur avec toolbar WYSIWYG -->
@@ -184,8 +191,17 @@
                 <div id="contactsSection" style="display: none;">
                     <div class="info-box">
                         <strong>Nombre d'agents :</strong> <span id="contactCount">0</span>
+                        | <strong>Sélectionnés :</strong> <span id="selectedCount">0</span>
                     </div>
                     <div class="contacts-list" id="contactsList"></div>
+
+                    <!-- Actions groupées -->
+                    <div id="bulkActionsSection" class="bulk-actions" style="display: none;">
+                        <div class="bulk-actions-title">📧 Actions groupées</div>
+                        <button class="button btn-success btn-small" onclick="sendGroupEmail()">
+                            📧 Envoyer email groupé aux sélectionnés
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -193,25 +209,27 @@
 
     <script>
         // ------------------------------------------------------------------
-        // CONFIGURATION - Utiliser les IDs de colonne, pas les labels
+        // CONFIGURATION
         // ------------------------------------------------------------------
         const TABLE_PROJETS = 'Projets';
         const TABLE_CONTACTS = 'Contacts';
-        const COL_HABILITATION_TEXT = 'Habilitation_accordee';  // ← ID interne (pas label)
-        const COL_HABILITE_BOOL = 'Habilite';                   // ← ID interne (pas label)
+        const TABLE_TEMPLATES = 'Templates';
+        const COL_HABILITATION_TEXT = 'Habilitation_accordee';
+        const COL_HABILITE_BOOL = 'Habilite';
         const COL_MESSAGE = 'Message_HTML';
         const COL_SUBJECT = 'Objet_Mail';
 
         let state = {
             projects: [],
             contacts: [],
+            templates: [],
             currentProject: null,
+            selectedContacts: new Set(),
             gristReady: false,
             hasMessageColumn: true,
             hasSubjectColumn: true
         };
 
-        // Convertir format colonne-orienté en tableau de lignes
         function columnsToRows(colData) {
             const keys = Object.keys(colData);
             const rowCount = colData.id ? colData.id.length : (colData[keys[0]] || []).length;
@@ -224,24 +242,16 @@
             return rows;
         }
 
-        // Charger dynamiquement le script Grist
         function loadGristScript(url) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = url;
-                script.onload = () => {
-                    console.log("Script chargé avec succès:", url);
-                    resolve();
-                };
-                script.onerror = (e) => {
-                    console.error("Échec du chargement du script:", url, e);
-                    reject(new Error("Impossible de charger " + url));
-                };
+                script.onload = () => resolve();
+                script.onerror = (e) => reject(new Error("Impossible de charger " + url));
                 document.head.appendChild(script);
             });
         }
 
-        // Initialiser Grist
         async function initGrist() {
             console.log("Initialisation Grist...");
 
@@ -259,29 +269,24 @@
 
             try {
                 await grist.ready({ requiredAccess: 'full' });
-                console.log("grist.ready() OK");
                 state.gristReady = true;
 
                 const projectsRaw = await grist.docApi.fetchTable(TABLE_PROJETS);
                 const contactsRaw = await grist.docApi.fetchTable(TABLE_CONTACTS);
+                const templatesRaw = await grist.docApi.fetchTable(TABLE_TEMPLATES);
 
                 const projects = columnsToRows(projectsRaw);
                 const contacts = columnsToRows(contactsRaw);
+                const templates = columnsToRows(templatesRaw);
 
-                console.log("Projets convertis:", projects);
-                console.log("Contacts convertis:", contacts);
+                console.log("Projets:", projects);
+                console.log("Contacts:", contacts);
+                console.log("Templates:", templates);
 
                 state.hasMessageColumn = Object.keys(projectsRaw).includes(COL_MESSAGE);
                 state.hasSubjectColumn = Object.keys(projectsRaw).includes(COL_SUBJECT);
 
-                if (!state.hasMessageColumn) {
-                    console.warn(`Colonne "${COL_MESSAGE}" absente.`);
-                }
-                if (!state.hasSubjectColumn) {
-                    console.warn(`Colonne "${COL_SUBJECT}" absente.`);
-                }
-
-                loadData(projects, contacts);
+                loadData(projects, contacts, templates);
 
             } catch (error) {
                 console.error("Erreur Grist:", error);
@@ -289,19 +294,13 @@
             }
         }
 
-        function loadData(projectsArray, contactsArray) {
+        function loadData(projectsArray, contactsArray, templatesArray) {
             state.projects = projectsArray || [];
             state.contacts = contactsArray || [];
+            state.templates = templatesArray || [];
 
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('configSection').style.display = 'block';
-
-            if (!state.hasMessageColumn) {
-                document.getElementById('noMessageColumnWarning').style.display = 'block';
-            }
-            if (!state.hasSubjectColumn) {
-                document.getElementById('noSubjectColumnWarning').style.display = 'block';
-            }
 
             populateProjectSelect();
         }
@@ -322,6 +321,19 @@
                 const option = document.createElement('option');
                 option.value = project.Projet;
                 option.textContent = project.Projet;
+                select.appendChild(option);
+            });
+        }
+
+        function populateTemplateSelect(projectName) {
+            const select = document.getElementById('templateSelect');
+            const projectTemplates = state.templates.filter(t => t.Projet === projectName);
+
+            select.innerHTML = '<option value="">-- Aucun template --</option>';
+            projectTemplates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.Nom || `Template ${template.id}`;
                 select.appendChild(option);
             });
         }
@@ -406,6 +418,7 @@
                     document.getElementById('messageSection').style.display = 'none';
                     document.getElementById('contactsSection').style.display = 'none';
                     document.getElementById('noProjectSelected').style.display = 'block';
+                    state.selectedContacts.clear();
                     return;
                 }
 
@@ -413,19 +426,31 @@
 
                 if (state.currentProject) {
                     document.getElementById('messageText').value = state.currentProject[COL_MESSAGE] || '';
-                    document.getElementById('subjectText').value = state.currentProject[COL_SUBJECT] || 'Habilitation Agent';
+                    document.getElementById('subjectText').value = state.currentProject[COL_SUBJECT] || state.currentProject.Projet;
+                    populateTemplateSelect(projectName);
                     updateMessagePreview();
                     document.getElementById('messageSection').style.display = 'block';
                     document.getElementById('noProjectSelected').style.display = 'none';
 
+                    state.selectedContacts.clear();
                     displayContacts(state.currentProject.id);
+                }
+            });
+
+            document.getElementById('templateSelect').addEventListener('change', function(e) {
+                const templateId = parseInt(e.target.value);
+                if (templateId) {
+                    const template = state.templates.find(t => t.id === templateId);
+                    if (template) {
+                        document.getElementById('messageText').value = template.Contenu_HTML || '';
+                        updateMessagePreview();
+                    }
                 }
             });
 
             document.getElementById('messageText').addEventListener('input', updateMessagePreview);
             document.getElementById('subjectText').addEventListener('input', updateMessagePreview);
 
-            // Script Grist
             window.__gristApiUrl = "https://grist.numerique.gouv.fr/grist-plugin-api.js";
             initGrist();
         });
@@ -458,21 +483,24 @@
             document.getElementById('contactsSection').style.display = 'block';
 
             projectContacts.forEach(contact => {
-                const card = document.createElement('div');
-                card.className = 'contact-card';
-
-                // Affichage texte de "Habilitation accordée"
-                const habilitationText = contact[COL_HABILITATION_TEXT] || 'Non renseigné';
-                
-                // Checkbox liée au booléen "Habilité"
+                const isSelected = state.selectedContacts.has(contact.id);
                 const isHabilite = contact[COL_HABILITE_BOOL] === true;
+                const habilitationText = contact[COL_HABILITATION_TEXT] || 'Non renseigné';
+
+                const card = document.createElement('div');
+                card.className = 'contact-card' + (isSelected ? ' selected' : '');
+                card.id = 'contact-' + contact.id;
 
                 card.innerHTML = `
-                    <div class="contact-info">
-                        <h3>${contact['Prénom'] || ''} ${contact.Nom || ''}</h3>
-                        <p>📧 ${contact.Mail || 'N/A'}</p>
-                        <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
-                        <p>Habilitation accordée : ${habilitationText}</p>
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                        <input type="checkbox" id="select-${contact.id}" ${isSelected ? 'checked' : ''}
+                               onchange="toggleSelectContact(${contact.id})">
+                        <div class="contact-info">
+                            <h3>${contact['Prénom'] || ''} ${contact.Nom || ''}</h3>
+                            <p>📧 ${contact.Mail || 'N/A'}</p>
+                            <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
+                            <p>Habilitation accordée : ${habilitationText}</p>
+                        </div>
                     </div>
                     <div class="contact-actions">
                         <div class="checkbox-container">
@@ -487,6 +515,37 @@
                 `;
                 contactsList.appendChild(card);
             });
+
+            updateBulkActionsDisplay();
+        }
+
+        function toggleSelectContact(contactId) {
+            if (state.selectedContacts.has(contactId)) {
+                state.selectedContacts.delete(contactId);
+            } else {
+                state.selectedContacts.add(contactId);
+            }
+            
+            const card = document.getElementById('contact-' + contactId);
+            if (state.selectedContacts.has(contactId)) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+            
+            updateBulkActionsDisplay();
+        }
+
+        function updateBulkActionsDisplay() {
+            const selectedCount = state.selectedContacts.size;
+            document.getElementById('selectedCount').textContent = selectedCount;
+            
+            const bulkActionsSection = document.getElementById('bulkActionsSection');
+            if (selectedCount > 0) {
+                bulkActionsSection.style.display = 'block';
+            } else {
+                bulkActionsSection.style.display = 'none';
+            }
         }
 
         function sendEmail(email, prenom) {
@@ -497,16 +556,37 @@
             window.open(mailtoLink);
         }
 
+        function sendGroupEmail() {
+            if (state.selectedContacts.size === 0) {
+                alert('❌ Sélectionnez au least un agent');
+                return;
+            }
+
+            const emails = [];
+            state.selectedContacts.forEach(contactId => {
+                const contact = state.contacts.find(c => c.id === contactId);
+                if (contact && contact.Mail) {
+                    emails.push(contact.Mail);
+                }
+            });
+
+            if (emails.length === 0) {
+                alert('❌ Aucun email valide trouvé');
+                return;
+            }
+
+            const message = document.getElementById('messageText').value;
+            const subject = document.getElementById('subjectText').value;
+            const mailtoLink = `mailto:${emails.join(';')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            
+            window.open(mailtoLink);
+        }
+
         async function saveMessage() {
             const messageText = document.getElementById('messageText').value;
             const subjectText = document.getElementById('subjectText').value;
 
             if (!state.currentProject) return;
-
-            if (!state.hasMessageColumn && !state.hasSubjectColumn) {
-                alert('❌ Les colonnes "' + COL_MESSAGE + '" et "' + COL_SUBJECT + '" n\'existent pas. Ajoutez-les dans Grist.');
-                return;
-            }
 
             state.currentProject[COL_MESSAGE] = messageText;
             state.currentProject[COL_SUBJECT] = subjectText;
