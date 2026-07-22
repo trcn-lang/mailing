@@ -6,251 +6,49 @@
     <title>Widget Habilitation</title>
     <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
     <style>
-        :root {
-            --primary: #0055CC;
-            --primary-hover: #0047AB;
-            --dark: #000091;
-            --light: #F5F5F5;
-            --border: #E5E5E5;
-            --text: #3C3C3C;
-            --text-muted: #656565;
-            --success: #4CAF50;
-            --success-hover: #45a049;
-            --error: #D32F2F;
-            --warning: #FCB02D;
-            --info-bg: #E3F2FD;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--light); 
-            color: var(--text); 
-            padding: 20px; 
-        }
-        
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F5F5F5; color: #3C3C3C; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        
-        h1 { 
-            color: var(--dark); 
-            margin-bottom: 30px; 
-            font-size: 32px; 
-        }
-        
-        h2 { 
-            color: var(--dark); 
-            font-size: 18px; 
-            margin-bottom: 15px; 
-            border-bottom: 2px solid var(--light); 
-            padding-bottom: 8px; 
-        }
-
-        /* LAYOUT */
-        .main-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px; 
-        }
-        
-        .panel { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-        }
-        
-        .column { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-        }
-
-        /* FORMS */
+        h1 { color: #000091; margin-bottom: 30px; font-size: 32px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .panel h2 { color: #000091; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #F5F5F5; padding-bottom: 8px; }
         .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #000091; font-size: 13px; }
+        select, input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #E5E5E5; border-radius: 4px; font-family: inherit; font-size: 13px; }
+        select:focus, input[type="text"]:focus, textarea:focus { outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); }
         
-        label { 
-            display: block; 
-            font-weight: 600; 
-            margin-bottom: 6px; 
-            color: var(--dark); 
-            font-size: 13px; 
-        }
+        .left-column { display: flex; flex-direction: column; gap: 20px; }
+        .right-column { display: flex; flex-direction: column; gap: 20px; }
         
-        select, 
-        input[type="text"], 
-        textarea { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid var(--border); 
-            border-radius: 4px; 
-            font-family: inherit; 
-            font-size: 13px; 
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+        .editor-area { display: flex; flex-direction: column; height: 350px; }
+        .editor-textarea { flex: 1; resize: none; font-family: inherit; font-size: 13px; padding: 10px; }
         
-        select:focus, 
-        input[type="text"]:focus, 
-        textarea:focus { 
-            outline: none; 
-            border-color: var(--primary); 
-            box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); 
-        }
-
-        /* BUTTONS */
-        .button { 
-            display: inline-block; 
-            padding: 10px 20px; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            font-size: 13px;
-            transition: background-color 0.2s;
-        }
+        .button { display: inline-block; padding: 10px 20px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-primary { background-color: #0055CC; color: white; }
+        .btn-primary:hover { background-color: #0047AB; }
+        .btn-secondary { background-color: #F5F5F5; color: #3C3C3C; border: 1px solid #E5E5E5; }
+        .btn-secondary:hover { background-color: #E5E5E5; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-success:hover { background-color: #45a049; }
+        .btn-small { padding: 6px 12px; font-size: 11px; }
+        .button-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
         
-        .btn-primary { 
-            background-color: var(--primary); 
-            color: white; 
-        }
-        .btn-primary:hover { background-color: var(--primary-hover); }
+        .contacts-list { max-height: 400px; overflow-y: auto; }
+        .contact-card { background: #F5F5F5; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #0055CC; font-size: 12px; }
+        .contact-card.selected { background: #E3F2FD; }
+        .contact-info h3 { font-size: 13px; margin-bottom: 2px; color: #000091; }
+        .contact-info p { font-size: 11px; color: #656565; margin: 1px 0; }
+        .contact-actions { display: flex; gap: 6px; align-items: center; }
+        .checkbox-container { display: flex; align-items: center; gap: 6px; }
+        .checkbox-container input { width: 16px; height: 16px; cursor: pointer; }
         
-        .btn-secondary { 
-            background-color: var(--light); 
-            color: var(--text); 
-            border: 1px solid var(--border); 
-        }
-        .btn-secondary:hover { background-color: var(--border); }
+        .info-box { background-color: #E3F2FD; border-left: 4px solid #0055CC; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; }
+        .error-box { background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; color: #C62828; }
+        .loading { text-align: center; padding: 20px; color: #656565; font-size: 13px; }
+        .bulk-actions { background: #F5F5F5; padding: 10px; border-radius: 4px; border-left: 3px solid #FCB02D; margin-bottom: 12px; }
         
-        .btn-success { 
-            background-color: var(--success); 
-            color: white; 
-        }
-        .btn-success:hover { background-color: var(--success-hover); }
-        
-        .btn-small { 
-            padding: 6px 12px; 
-            font-size: 11px; 
-        }
-        
-        .button-group { 
-            display: flex; 
-            gap: 8px; 
-            flex-wrap: wrap; 
-            margin-top: 12px; 
-        }
-
-        /* EDITOR */
-        .editor-area { 
-            display: flex; 
-            flex-direction: column; 
-            height: 350px; 
-        }
-        
-        .editor-textarea { 
-            flex: 1; 
-            resize: none; 
-            font-family: inherit; 
-            font-size: 13px; 
-            padding: 10px; 
-        }
-
-        /* CONTACTS */
-        .contacts-list { 
-            max-height: 400px; 
-            overflow-y: auto; 
-        }
-        
-        .contact-card { 
-            background: var(--light); 
-            padding: 10px; 
-            margin-bottom: 8px; 
-            border-radius: 4px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-left: 3px solid var(--primary); 
-            font-size: 12px;
-            transition: background-color 0.2s;
-        }
-        
-        .contact-card.selected { 
-            background: var(--info-bg); 
-        }
-        
-        .contact-info h3 { 
-            font-size: 13px; 
-            margin-bottom: 2px; 
-            color: var(--dark); 
-        }
-        
-        .contact-info p { 
-            font-size: 11px; 
-            color: var(--text-muted); 
-            margin: 1px 0; 
-        }
-        
-        .contact-actions { 
-            display: flex; 
-            gap: 6px; 
-            align-items: center; 
-        }
-        
-        input[type="checkbox"] { 
-            width: 16px; 
-            height: 16px; 
-            cursor: pointer; 
-        }
-
-        /* MESSAGES */
-        .alert { 
-            padding: 10px; 
-            margin-bottom: 12px; 
-            border-radius: 4px; 
-            border-left: 4px solid transparent;
-            font-size: 12px; 
-        }
-        
-        .alert-info { 
-            background-color: var(--info-bg); 
-            border-left-color: var(--primary); 
-        }
-        
-        .alert-error { 
-            background-color: #FFEBEE; 
-            border-left-color: var(--error); 
-            color: #C62828; 
-        }
-        
-        .alert-warning { 
-            background-color: #FFF3E0; 
-            border-left-color: var(--warning); 
-            color: #E65100; 
-        }
-
-        /* STATES */
-        .hidden { display: none !important; }
-        
-        .loading { 
-            text-align: center; 
-            padding: 20px; 
-            color: var(--text-muted); 
-            font-size: 13px; 
-        }
-
-        /* BULK ACTIONS */
-        .bulk-actions { 
-            background: var(--light); 
-            padding: 10px; 
-            border-radius: 4px; 
-            border-left: 3px solid var(--warning); 
-            margin-bottom: 12px; 
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 1024px) { 
-            .main-grid { grid-template-columns: 1fr; } 
-        }
+        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -258,89 +56,72 @@
         <h1>🔐 Habilitation des Agents</h1>
 
         <div class="main-grid">
-            <!-- LEFT COLUMN -->
-            <div class="column">
-                <!-- CONFIG PANEL -->
+            <!-- COLONNE 1 : CONFIG + ÉDITEUR TEMPLATE -->
+            <div class="left-column">
+                <!-- CONFIG -->
                 <div class="panel">
                     <h2>📋 Configuration</h2>
-                    <div id="loadingState" class="loading">⏳ Chargement...</div>
-                    <div id="errorState" class="alert alert-error hidden"></div>
+                    <div id="loadingMessage" class="loading">⏳ Chargement...</div>
+                    <div id="errorMessage" style="display: none;"></div>
 
-                    <div id="configState" class="hidden">
+                    <div id="configSection" style="display: none;">
                         <div class="form-group">
                             <label for="projectSelect">Projet :</label>
-                            <select id="projectSelect">
-                                <option value="">-- Choisir --</option>
-                            </select>
+                            <select id="projectSelect"></select>
                         </div>
 
-                        <div id="messageState" class="hidden">
+                        <div id="messageSection" style="display: none;">
                             <div class="form-group">
                                 <label for="templateSelect">Template :</label>
-                                <select id="templateSelect">
-                                    <option value="">-- Nouveau --</option>
-                                </select>
+                                <select id="templateSelect"></select>
                             </div>
 
                             <div class="form-group">
-                                <label for="subjectInput">Objet du mail :</label>
-                                <input type="text" id="subjectInput" />
+                                <label for="subjectText">Objet du mail :</label>
+                                <input type="text" id="subjectText" />
                             </div>
 
                             <div class="button-group">
-                                <button id="saveBtn" class="button btn-primary btn-small hidden">
-                                    💾 Enregistrer
-                                </button>
-                                <button id="saveAsBtn" class="button btn-primary btn-small">
-                                    💾 Enregistrer sous...
-                                </button>
+                                <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
+                                <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- EDITOR PANEL -->
+                <!-- ÉDITEUR TEMPLATE -->
                 <div class="panel">
                     <h2>✍️ Éditer Template</h2>
-                    <div id="editorState" class="hidden">
+                    <div id="editorSection" style="display: none;">
                         <div class="editor-area">
-                            <textarea id="contentInput" class="editor-textarea" 
-                                      placeholder="Contenu du template..."></textarea>
+                            <textarea id="messageText" class="editor-textarea" placeholder="Contenu du template..."></textarea>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN -->
-            <div class="column">
-                <!-- ACTIONS PANEL -->
+            <!-- COLONNE 2 : ACTIONS MAIL + AGENTS -->
+            <div class="right-column">
+                <!-- ACTIONS MAIL -->
                 <div class="panel">
                     <h2>📧 Actions Mail</h2>
-                    <div id="bulkActionsState" class="bulk-actions hidden">
-                        <button class="button btn-success btn-small" id="sendGroupBtn">
-                            📧 Groupé
-                        </button>
-                        <button class="button btn-secondary btn-small" id="previewBtn">
-                            👁️ Aperçu
-                        </button>
-                        <div style="font-size: 11px; margin-top: 8px; color: var(--text-muted);">
+                    <div id="bulkActionsSection" class="bulk-actions" style="display: none;">
+                        <button class="button btn-success btn-small" onclick="sendGroupEmail()">📧 Groupé</button>
+                        <button class="button btn-secondary btn-small" onclick="previewEmail()">👁️ Aperçu</button>
+                        <div style="font-size: 11px; margin-top: 8px; color: #666;">
                             Sélectionnés : <span id="selectedCount">0</span>
                         </div>
                     </div>
-                    <div id="noSelectionAlert" class="alert alert-info">
-                        Sélectionnez des agents
-                    </div>
+                    <div id="noActionSelected" class="info-box">Sélectionnez des agents</div>
                 </div>
 
-                <!-- CONTACTS PANEL -->
+                <!-- AGENTS -->
                 <div class="panel">
                     <h2>👥 Agents</h2>
-                    <div id="noProjectAlert" class="alert alert-info">
-                        Sélectionnez un projet
-                    </div>
+                    <div id="noProjectSelected" class="info-box">Sélectionnez un projet</div>
 
-                    <div id="contactsState" class="hidden">
-                        <div class="alert alert-info">
+                    <div id="contactsSection" style="display: none;">
+                        <div class="info-box">
                             Total : <span id="contactCount">0</span>
                         </div>
                         <div class="contacts-list" id="contactsList"></div>
@@ -351,49 +132,28 @@
     </div>
 
     <script>
-        // ============================================
-        // CONSTANTS
-        // ============================================
-        const TABLES = {
-            PROJECTS: 'Projets',
-            CONTACTS: 'Contacts',
-            TEMPLATES: 'Templates'
+        const TABLE_PROJETS = 'Projets';
+        const TABLE_CONTACTS = 'Contacts';
+        const TABLE_TEMPLATES = 'Templates';
+        const COL_HABILITATION = 'Habilitation_accordee';
+        const COL_HABILITE = 'Habilite';
+
+        let state = {
+            projects: [], contacts: [], templates: [],
+            currentProject: null, currentTemplateId: null,
+            selectedContacts: new Set(),
+            gristReady: false
         };
 
-        const COLUMNS = {
-            HABILITATION: 'Habilitation_accordee',
-            ENABLED: 'Habilite'
-        };
-
-        // ============================================
-        // STATE MANAGEMENT
-        // ============================================
-        const state = {
-            gristReady: false,
-            projects: [],
-            contacts: [],
-            templates: [],
-            currentProject: null,
-            currentTemplate: null,
-            selectedContacts: new Set()
-        };
-
-        // ============================================
-        // UTILITY FUNCTIONS
-        // ============================================
-        function columnsToRows(columnData) {
-            const keys = Object.keys(columnData);
-            const rowCount = columnData.id?.length ?? 0;
+        function columnsToRows(colData) {
+            const keys = Object.keys(colData);
+            const rowCount = colData.id ? colData.id.length : (colData[keys[0]] || []).length;
             const rows = [];
-
             for (let i = 0; i < rowCount; i++) {
                 const row = {};
                 keys.forEach(key => {
-                    let value = columnData[key][i];
-                    // Unwrap single-element arrays
-                    if (Array.isArray(value) && value.length === 1) {
-                        value = value[0];
-                    }
+                    let value = colData[key][i];
+                    if (Array.isArray(value) && value.length > 0) value = value[0];
                     row[key] = value;
                 });
                 rows.push(row);
@@ -401,407 +161,225 @@
             return rows;
         }
 
-        function showElement(selector) {
-            document.getElementById(selector).classList.remove('hidden');
+        function loadGristScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error("API Grist indisponible"));
+                document.head.appendChild(script);
+            });
         }
 
-        function hideElement(selector) {
-            document.getElementById(selector).classList.add('hidden');
-        }
-
-        function showError(message) {
-            const errorEl = document.getElementById('errorState');
-            errorEl.textContent = '❌ ' + message;
-            showElement('errorState');
-        }
-
-        function showSuccess(message) {
-            alert('✅ ' + message);
-        }
-
-        function showWarning(message) {
-            alert('⚠️ ' + message);
-        }
-
-        // ============================================
-        // GRIST INITIALIZATION
-        // ============================================
         async function initGrist() {
             try {
-                if (!window.grist) {
-                    throw new Error("API Grist non disponible");
-                }
-
+                await loadGristScript('https://grist.numerique.gouv.fr/grist-plugin-api.js');
+                if (!window.grist) throw new Error("API Grist non disponible");
                 await grist.ready({ requiredAccess: 'full' });
                 state.gristReady = true;
 
-                // Fetch all data
-                const [projects, contacts, templates] = await Promise.all([
-                    grist.docApi.fetchTable(TABLES.PROJECTS),
-                    grist.docApi.fetchTable(TABLES.CONTACTS),
-                    grist.docApi.fetchTable(TABLES.TEMPLATES)
-                ]);
+                const projects = columnsToRows(await grist.docApi.fetchTable(TABLE_PROJETS));
+                const contacts = columnsToRows(await grist.docApi.fetchTable(TABLE_CONTACTS));
+                const templates = columnsToRows(await grist.docApi.fetchTable(TABLE_TEMPLATES));
 
-                state.projects = columnsToRows(projects);
-                state.contacts = columnsToRows(contacts);
-                state.templates = columnsToRows(templates);
+                state.projects = projects;
+                state.contacts = contacts;
+                state.templates = templates;
 
-                // Update UI
-                hideElement('loadingState');
-                showElement('configState');
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('configSection').style.display = 'block';
                 populateProjects();
-                attachEventListeners();
 
             } catch (error) {
-                hideElement('loadingState');
-                showError(error.message);
+                document.getElementById('loadingMessage').style.display = 'none';
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.className = 'error-box';
+                errorDiv.innerHTML = '❌ ' + error.message;
+                errorDiv.style.display = 'block';
             }
         }
 
-        // ============================================
-        // UI POPULATION
-        // ============================================
         function populateProjects() {
             const select = document.getElementById('projectSelect');
             select.innerHTML = '<option value="">-- Choisir --</option>';
-            
-            state.projects.forEach(project => {
-                const option = document.createElement('option');
-                option.value = project.id;
-                option.textContent = project.Projet;
-                select.appendChild(option);
+            state.projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.Projet;
+                select.appendChild(opt);
             });
         }
 
         function populateTemplates(projectId) {
             const select = document.getElementById('templateSelect');
-            const templates = state.templates.filter(t => t.Projet === projectId);
-            
+            const temps = state.templates.filter(t => t.Projet === projectId);
             select.innerHTML = '<option value="">-- Nouveau --</option>';
-            templates.forEach(template => {
-                const option = document.createElement('option');
-                option.value = template.id;
-                option.textContent = template.Nom || `Template ${template.id}`;
-                select.appendChild(option);
+            temps.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.Nom || 'Template ' + t.id;
+                select.appendChild(opt);
             });
         }
 
-        function displayContacts(projectId) {
-            const contacts = state.contacts.filter(c => c.Projet === projectId);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('projectSelect').addEventListener('change', (e) => {
+                const projId = parseInt(e.target.value);
+                if (!projId) {
+                    state.currentProject = null;
+                    document.getElementById('messageSection').style.display = 'none';
+                    document.getElementById('editorSection').style.display = 'none';
+                    document.getElementById('contactsSection').style.display = 'none';
+                    return;
+                }
+
+                state.currentProject = state.projects.find(p => p.id === projId);
+                state.currentTemplateId = null;
+                state.selectedContacts.clear();
+
+                document.getElementById('messageText').value = '';
+                document.getElementById('subjectText').value = '';
+                document.getElementById('btnSave').style.display = 'none';
+                document.getElementById('messageSection').style.display = 'block';
+                document.getElementById('editorSection').style.display = 'block';
+
+                populateTemplates(projId);
+                displayContacts(projId);
+            });
+
+            document.getElementById('templateSelect').addEventListener('change', (e) => {
+                const tempId = parseInt(e.target.value);
+                if (!tempId) {
+                    state.currentTemplateId = null;
+                    document.getElementById('btnSave').style.display = 'none';
+                    document.getElementById('messageText').value = '';
+                    return;
+                }
+
+                const temp = state.templates.find(t => t.id === tempId);
+                if (temp) {
+                    state.currentTemplateId = tempId;
+                    document.getElementById('messageText').value = temp.Contenu_HTML || '';
+                    document.getElementById('subjectText').value = temp.Objet_Mail || '';
+                    document.getElementById('btnSave').style.display = 'inline-block';
+                }
+            });
+
+            initGrist();
+        });
+
+        function displayContacts(projId) {
+            const contacts = state.contacts.filter(c => c.Projet === projId);
             const list = document.getElementById('contactsList');
             list.innerHTML = '';
 
             if (contacts.length === 0) {
-                hideElement('contactsState');
+                document.getElementById('contactsSection').style.display = 'none';
                 return;
             }
 
+            document.getElementById('contactsSection').style.display = 'block';
             document.getElementById('contactCount').textContent = contacts.length;
-            showElement('contactsState');
 
-            contacts.forEach(contact => {
-                const card = createContactCard(contact);
+            contacts.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'contact-card' + (state.selectedContacts.has(c.id) ? ' selected' : '');
+                card.id = 'card-' + c.id;
+
+                const hab = c[COL_HABILITATION] || '';
+                const chk = c[COL_HABILITE] === true;
+
+                card.innerHTML = '<div style="flex: 1; display: flex; gap: 8px; align-items: center;">' +
+                    '<input type="checkbox" id="sel-' + c.id + '" ' + (state.selectedContacts.has(c.id) ? 'checked' : '') + ' onchange="toggleSelect(' + c.id + ')">' +
+                    '<div class="contact-info" style="min-width: 0;">' +
+                    '<h3>' + (c.Prénom || '') + ' ' + (c.Nom || '') + '</h3>' +
+                    '<p>📧 ' + (c.Mail || 'N/A') + '</p>' +
+                    '<p>' + hab + '</p>' +
+                    '</div></div>' +
+                    '<div class="contact-actions">' +
+                    '<input type="checkbox" id="hab-' + c.id + '" ' + (chk ? 'checked' : '') + ' onchange="toggleHab(' + c.id + ')" title="Habilité">' +
+                    '<button class="button btn-small btn-primary" onclick="sendOne(' + c.id + ')">📧</button>' +
+                    '</div>';
                 list.appendChild(card);
             });
         }
 
-        function createContactCard(contact) {
-            const card = document.createElement('div');
-            const isSelected = state.selectedContacts.has(contact.id);
-            
-            card.className = 'contact-card' + (isSelected ? ' selected' : '');
-            card.id = `contact-${contact.id}`;
-            
-            const habilitation = contact[COLUMNS.HABILITATION] || '';
-            const isEnabled = contact[COLUMNS.ENABLED] === true;
-
-            card.innerHTML = `
-                <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" 
-                           data-contact-id="${contact.id}"
-                           class="contact-select"
-                           ${isSelected ? 'checked' : ''}>
-                    <div class="contact-info">
-                        <h3>${contact.Prénom || ''} ${contact.Nom || ''}</h3>
-                        <p>📧 ${contact.Mail || 'N/A'}</p>
-                        <p>${habilitation}</p>
-                    </div>
-                </div>
-                <div class="contact-actions">
-                    <input type="checkbox" 
-                           data-contact-id="${contact.id}"
-                           class="contact-enable"
-                           ${isEnabled ? 'checked' : ''}
-                           title="Habilité">
-                    <button class="button btn-small btn-primary" data-contact-id="${contact.id}" class="send-one">
-                        📧
-                    </button>
-                </div>
-            `;
-
-            return card;
-        }
-
-        // ============================================
-        // EVENT HANDLERS
-        // ============================================
-        function attachEventListeners() {
-            // Project selection
-            document.getElementById('projectSelect').addEventListener('change', handleProjectChange);
-            
-            // Template selection
-            document.getElementById('templateSelect').addEventListener('change', handleTemplateChange);
-            
-            // Template actions
-            document.getElementById('saveBtn').addEventListener('click', saveTemplate);
-            document.getElementById('saveAsBtn').addEventListener('click', saveTemplateAs);
-            
-            // Email actions
-            document.getElementById('sendGroupBtn').addEventListener('click', sendGroupEmail);
-            document.getElementById('previewBtn').addEventListener('click', previewEmail);
-            
-            // Contact list delegation (for dynamic elements)
-            document.getElementById('contactsList').addEventListener('change', handleContactChange);
-            document.getElementById('contactsList').addEventListener('click', handleContactClick);
-        }
-
-        function handleProjectChange(event) {
-            const projectId = parseInt(event.target.value) || null;
-            
-            if (!projectId) {
-                state.currentProject = null;
-                state.currentTemplate = null;
-                state.selectedContacts.clear();
-                hideElement('messageState');
-                hideElement('editorState');
-                hideElement('contactsState');
-                return;
-            }
-
-            state.currentProject = state.projects.find(p => p.id === projectId);
-            state.currentTemplate = null;
-            state.selectedContacts.clear();
-
-            document.getElementById('contentInput').value = '';
-            document.getElementById('subjectInput').value = '';
-            hideElement('saveBtn');
-            showElement('messageState');
-            showElement('editorState');
-
-            populateTemplates(projectId);
-            displayContacts(projectId);
-        }
-
-        function handleTemplateChange(event) {
-            const templateId = parseInt(event.target.value) || null;
-
-            if (!templateId) {
-                state.currentTemplate = null;
-                document.getElementById('contentInput').value = '';
-                hideElement('saveBtn');
-                return;
-            }
-
-            const template = state.templates.find(t => t.id === templateId);
-            if (template) {
-                state.currentTemplate = template;
-                document.getElementById('contentInput').value = template.Contenu_HTML || '';
-                document.getElementById('subjectInput').value = template.Objet_Mail || '';
-                showElement('saveBtn');
-            }
-        }
-
-        function handleContactChange(event) {
-            const contactId = parseInt(event.target.dataset.contactId);
-
-            if (event.target.classList.contains('contact-select')) {
-                toggleContactSelection(contactId);
-            } else if (event.target.classList.contains('contact-enable')) {
-                toggleContactEnabled(contactId);
-            }
-        }
-
-        function handleContactClick(event) {
-            if (event.target.classList.contains('send-one')) {
-                const contactId = parseInt(event.target.dataset.contactId);
-                sendOneEmail(contactId);
-            }
-        }
-
-        function toggleContactSelection(contactId) {
-            if (state.selectedContacts.has(contactId)) {
-                state.selectedContacts.delete(contactId);
-                document.getElementById(`contact-${contactId}`).classList.remove('selected');
+        function toggleSelect(id) {
+            if (state.selectedContacts.has(id)) {
+                state.selectedContacts.delete(id);
+                document.getElementById('card-' + id).classList.remove('selected');
             } else {
-                state.selectedContacts.add(contactId);
-                document.getElementById(`contact-${contactId}`).classList.add('selected');
+                state.selectedContacts.add(id);
+                document.getElementById('card-' + id).classList.add('selected');
             }
-
-            updateSelectionUI();
+            document.getElementById('selectedCount').textContent = state.selectedContacts.size;
+            document.getElementById('bulkActionsSection').style.display = state.selectedContacts.size > 0 ? 'block' : 'none';
+            document.getElementById('noActionSelected').style.display = state.selectedContacts.size > 0 ? 'none' : 'block';
         }
 
-        function updateSelectionUI() {
-            const count = state.selectedContacts.size;
-            document.getElementById('selectedCount').textContent = count;
-
-            if (count > 0) {
-                showElement('bulkActionsState');
-                hideElement('noSelectionAlert');
-            } else {
-                hideElement('bulkActionsState');
-                showElement('noSelectionAlert');
-            }
-        }
-
-        async function toggleContactEnabled(contactId) {
-            const contact = state.contacts.find(c => c.id === contactId);
-            if (!contact) return;
-
-            const newValue = !contact[COLUMNS.ENABLED];
-            contact[COLUMNS.ENABLED] = newValue;
-
+        async function toggleHab(id) {
+            const c = state.contacts.find(x => x.id === id);
+            if (!c) return;
+            const newVal = !c[COL_HABILITE];
+            c[COL_HABILITE] = newVal;
             try {
-                await grist.docApi.applyUserActions([[
-                    'UpdateRecord',
-                    TABLES.CONTACTS,
-                    contactId,
-                    { [COLUMNS.ENABLED]: newValue }
-                ]]);
-            } catch (error) {
-                console.error('Error updating contact:', error);
-                showWarning('Erreur lors de la mise à jour');
-            }
+                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_CONTACTS, id, { [COL_HABILITE]: newVal }]]);
+            } catch (e) { console.error(e); }
         }
 
-        // ============================================
-        // EMAIL FUNCTIONS
-        // ============================================
-        function sendOneEmail(contactId) {
-            const contact = state.contacts.find(c => c.id === contactId);
-            if (contact?.Mail) {
-                openMailClient(contact.Mail);
-            }
+        function sendOne(id) {
+            const c = state.contacts.find(x => x.id === id);
+            if (c) sendEmail(c.Mail);
+        }
+
+        function sendEmail(email) {
+            const subj = document.getElementById('subjectText').value;
+            const link = 'mailto:' + email + '?subject=' + encodeURIComponent(subj);
+            window.open(link);
         }
 
         function sendGroupEmail() {
             const emails = [];
-            state.selectedContacts.forEach(contactId => {
-                const contact = state.contacts.find(c => c.id === contactId);
-                if (contact?.Mail) {
-                    emails.push(contact.Mail);
-                }
+            state.selectedContacts.forEach(id => {
+                const c = state.contacts.find(x => x.id === id);
+                if (c && c.Mail) emails.push(c.Mail);
             });
-
-            if (emails.length === 0) {
-                showWarning('Aucun email disponible');
-                return;
-            }
-
-            openMailClient(emails.join(';'));
-        }
-
-        function openMailClient(recipients) {
-            const subject = document.getElementById('subjectInput').value;
-            const mailLink = `mailto:${recipients}?subject=${encodeURIComponent(subject)}`;
-            window.open(mailLink);
+            if (emails.length === 0) { alert('❌ Aucun email'); return; }
+            const subj = document.getElementById('subjectText').value;
+            const link = 'mailto:' + emails.join(';') + '?subject=' + encodeURIComponent(subj);
+            window.open(link);
         }
 
         function previewEmail() {
-            const subject = document.getElementById('subjectInput').value || '(Sans objet)';
-            showWarning(`Aperçu\n\nObjet : ${subject}\nDestinataires : ${state.selectedContacts.size} agents`);
+            const subj = document.getElementById('subjectText').value;
+            alert('👁️ Aperçu\n\nObjet : ' + subj + '\nDestinataires : ' + state.selectedContacts.size + ' agents');
         }
 
-        // ============================================
-        // TEMPLATE MANAGEMENT
-        // ============================================
-        async function saveTemplate() {
-            if (!state.currentTemplate) {
-                showWarning('Aucun template sélectionné');
-                return;
-            }
-
-            const content = document.getElementById('contentInput').value.trim();
-            const subject = document.getElementById('subjectInput').value.trim();
-
-            if (!content) {
-                showWarning('Contenu vide');
-                return;
-            }
-
+        async function saveMessage() {
+            if (!state.currentTemplateId) { alert('❌ Aucun template'); return; }
+            const content = document.getElementById('messageText').value;
+            const subj = document.getElementById('subjectText').value;
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
             try {
-                await grist.docApi.applyUserActions([[
-                    'UpdateRecord',
-                    TABLES.TEMPLATES,
-                    state.currentTemplate.id,
-                    {
-                        Contenu_HTML: content,
-                        Objet_Mail: subject
-                    }
-                ]]);
-
-                // Update local state
-                state.currentTemplate.Contenu_HTML = content;
-                state.currentTemplate.Objet_Mail = subject;
-
-                showSuccess('Template mis à jour !');
-            } catch (error) {
-                console.error('Error saving template:', error);
-                showWarning(`Erreur : ${error.message}`);
-            }
+                await grist.docApi.applyUserActions([['UpdateRecord', TABLE_TEMPLATES, state.currentTemplateId, { Contenu_HTML: content, Objet_Mail: subj }]]);
+                alert('✅ Mis à jour !');
+            } catch (e) { alert('❌ Erreur : ' + e.message); }
         }
 
-        async function saveTemplateAs() {
-            if (!state.currentProject) {
-                showWarning('Sélectionnez un projet');
-                return;
-            }
-
-            const content = document.getElementById('contentInput').value.trim();
-            const subject = document.getElementById('subjectInput').value.trim();
-
-            if (!content) {
-                showWarning('Contenu vide');
-                return;
-            }
-
-            if (!subject) {
-                showWarning('Nom du template vide');
-                return;
-            }
-
+        async function saveMessageAs() {
+            const content = document.getElementById('messageText').value;
+            const subj = document.getElementById('subjectText').value;
+            if (!content.trim()) { alert('❌ Contenu vide'); return; }
+            if (!subj.trim()) { alert('❌ Nom vide'); return; }
+            if (!state.currentProject) { alert('❌ Projet'); return; }
             try {
-                await grist.docApi.applyUserActions([[
-                    'AddRecord',
-                    TABLES.TEMPLATES,
-                    null,
-                    {
-                        Projet: state.currentProject.id,
-                        Nom: subject,
-                        Contenu_HTML: content,
-                        Objet_Mail: subject
-                    }
-                ]]);
-
-                // Refresh templates
-                const templates = columnsToRows(
-                    await grist.docApi.fetchTable(TABLES.TEMPLATES)
-                );
-                state.templates = templates;
+                await grist.docApi.applyUserActions([['AddRecord', TABLE_TEMPLATES, null, { Projet: state.currentProject.id, Nom: subj, Contenu_HTML: content, Objet_Mail: subj }]]);
+                alert('✅ Créé !');
+                const temps = columnsToRows(await grist.docApi.fetchTable(TABLE_TEMPLATES));
+                state.templates = temps;
                 populateTemplates(state.currentProject.id);
-
-                showSuccess('Template créé !');
-                document.getElementById('templateSelect').value = '';
-                state.currentTemplate = null;
-            } catch (error) {
-                console.error('Error creating template:', error);
-                showWarning(`Erreur : ${error.message}`);
-            }
+            } catch (e) { alert('❌ Erreur : ' + e.message); }
         }
-
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-        document.addEventListener('DOMContentLoaded', initGrist);
     </script>
 </body>
 </html>
