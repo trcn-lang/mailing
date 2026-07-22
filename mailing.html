@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Widget Habilitation</title>
-    <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+    <!-- Le script grist-plugin-api.js est chargé dynamiquement (voir <script> plus bas) -->
+    <script>
+        window.__gristApiUrl = "https://grist.numerique.gouv.fr/grist-plugin-api.js";
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -162,23 +165,44 @@
             return rows;
         }
 
+        // Charge dynamiquement le script grist-plugin-api.js et remonte une vraie erreur
+        // (404, réseau bloqué, etc.) au lieu d'un simple "grist is not defined".
+        function loadGristScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = () => {
+                    console.log("Script chargé avec succès:", url);
+                    resolve();
+                };
+                script.onerror = (e) => {
+                    console.error("Échec du chargement du script:", url, e);
+                    reject(new Error("Impossible de charger " + url + " (404, CORS, ou réseau bloqué)"));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
         // Initialiser Grist
         async function initGrist() {
             console.log("Initialisation Grist...");
 
-            // Attendre que le script grist-plugin-api.js soit chargé (max ~3s)
-            let attempts = 0;
-            while (!window.grist && attempts < 30) {
-                await new Promise(r => setTimeout(r, 100));
-                attempts++;
+            try {
+                await loadGristScript(window.__gristApiUrl);
+            } catch (loadError) {
+                showError(
+                    loadError.message +
+                    "<br><br>👉 Testez directement dans un nouvel onglet : " +
+                    "<a href='" + window.__gristApiUrl + "' target='_blank'>" + window.__gristApiUrl + "</a>" +
+                    "<br>Si ça renvoie une erreur 404 ou du HTML, l'URL du script est incorrecte pour votre instance Grist."
+                );
+                return;
             }
 
             if (!window.grist) {
                 showError(
-                    "L'API Grist (window.grist) n'a pas pu être chargée depuis " +
-                    "https://grist.numerique.gouv.fr/grist-plugin-api.js. " +
-                    "Vérifiez que ce widget est bien ouvert en tant que Custom Widget dans Grist, " +
-                    "et que l'URL du script correspond à votre instance Grist."
+                    "Le script s'est chargé mais window.grist reste indéfini. " +
+                    "Le fichier chargé n'est peut-être pas le bon script (vérifiez son contenu à l'URL ci-dessus)."
                 );
                 return;
             }
