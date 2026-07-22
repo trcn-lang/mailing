@@ -8,9 +8,9 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F5F5F5; color: #3C3C3C; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #000091; margin-bottom: 30px; font-size: 32px; }
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .panel h2 { color: #000091; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #F5F5F5; padding-bottom: 8px; }
         .form-group { margin-bottom: 15px; }
@@ -18,27 +18,30 @@
         select, input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #E5E5E5; border-radius: 4px; font-family: inherit; font-size: 13px; }
         select:focus, input[type="text"]:focus, textarea:focus { outline: none; border-color: #0055CC; box-shadow: 0 0 0 3px rgba(0, 85, 204, 0.1); }
         
-        .editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .left-column { display: flex; flex-direction: column; gap: 20px; }
+        .right-column { display: flex; flex-direction: column; gap: 20px; }
+        
+        .editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 350px; }
         .editor-area { display: flex; flex-direction: column; }
         .editor-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #E5E5E5; }
         .editor-btn { padding: 6px 10px; border: 1px solid #E5E5E5; background: white; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; }
         .editor-btn:hover { background: #F5F5F5; border-color: #0055CC; color: #0055CC; }
-        .editor-textarea { flex: 1; min-height: 300px; resize: none; font-family: monospace; font-size: 12px; padding: 10px; }
+        .editor-textarea { flex: 1; resize: none; font-family: monospace; font-size: 12px; padding: 10px; }
         
         .preview-area { display: flex; flex-direction: column; }
-        .preview-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 8px; }
-        .preview-frame { flex: 1; border: 1px solid #E5E5E5; border-radius: 4px; padding: 15px; background: white; overflow-y: auto; font-size: 13px; line-height: 1.6; }
-        .preview-frame h1 { font-size: 20px; margin: 10px 0 8px; color: #000091; }
-        .preview-frame h2 { font-size: 18px; margin: 10px 0 8px; color: #000091; }
-        .preview-frame h3 { font-size: 16px; margin: 10px 0 8px; color: #000091; }
-        .preview-frame p { margin: 8px 0; }
-        .preview-frame ul, .preview-frame ol { margin-left: 20px; margin: 8px 0; }
-        .preview-frame li { margin: 4px 0; }
+        .preview-label { font-size: 12px; font-weight: 600; color: #666; }
+        .preview-frame { flex: 1; border: 1px solid #E5E5E5; border-radius: 4px; padding: 12px; background: white; overflow-y: auto; font-size: 12px; line-height: 1.6; }
+        .preview-frame h1 { font-size: 18px; margin: 8px 0 6px; color: #000091; }
+        .preview-frame h2 { font-size: 16px; margin: 8px 0 6px; color: #000091; }
+        .preview-frame h3 { font-size: 14px; margin: 8px 0 6px; color: #000091; }
+        .preview-frame p { margin: 6px 0; }
+        .preview-frame ul, .preview-frame ol { margin-left: 18px; margin: 6px 0; }
+        .preview-frame li { margin: 2px 0; }
         .preview-frame a { color: #0055CC; text-decoration: none; }
         .preview-frame a:hover { text-decoration: underline; }
         .preview-frame strong { font-weight: 600; }
         .preview-frame em { font-style: italic; }
-        .preview-frame blockquote { border-left: 3px solid #0055CC; padding-left: 10px; margin: 8px 0; color: #666; }
+        .preview-frame blockquote { border-left: 3px solid #0055CC; padding-left: 10px; margin: 6px 0; color: #666; }
         
         .button { display: inline-block; padding: 10px 20px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; }
         .btn-primary { background-color: #0055CC; color: white; }
@@ -50,23 +53,24 @@
         .btn-small { padding: 6px 12px; font-size: 11px; }
         .button-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
         
-        .contacts-list { margin-top: 15px; }
-        .contact-card { background: #F5F5F5; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #0055CC; }
+        .contacts-list { max-height: 400px; overflow-y: auto; }
+        .contact-card { background: #F5F5F5; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #0055CC; font-size: 12px; }
         .contact-card.selected { background: #E3F2FD; }
-        .contact-info h3 { font-size: 14px; margin-bottom: 2px; color: #000091; }
-        .contact-info p { font-size: 12px; color: #656565; margin: 1px 0; }
-        .contact-actions { display: flex; gap: 8px; align-items: center; }
+        .contact-info h3 { font-size: 13px; margin-bottom: 2px; color: #000091; }
+        .contact-info p { font-size: 11px; color: #656565; margin: 1px 0; }
+        .contact-actions { display: flex; gap: 6px; align-items: center; }
         .checkbox-container { display: flex; align-items: center; gap: 6px; }
-        .checkbox-container input { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-container input { width: 16px; height: 16px; cursor: pointer; }
         
-        .info-box { background-color: #E3F2FD; border-left: 4px solid #0055CC; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 12px; }
-        .error-box { background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 12px; color: #C62828; }
-        .success-box { background-color: #E8F5E9; border-left: 4px solid #4CAF50; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 12px; color: #2E7D32; }
-        .loading { text-align: center; padding: 30px 20px; color: #656565; }
-        .bulk-actions { background: #F5F5F5; padding: 12px; border-radius: 4px; margin-top: 15px; border-left: 4px solid #FCB02D; }
+        .info-box { background-color: #E3F2FD; border-left: 4px solid #0055CC; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; }
+        .error-box { background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; color: #C62828; }
+        .success-box { background-color: #E8F5E9; border-left: 4px solid #4CAF50; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; color: #2E7D32; }
+        .loading { text-align: center; padding: 20px; color: #656565; font-size: 13px; }
+        .bulk-actions { background: #F5F5F5; padding: 10px; border-radius: 4px; border-left: 3px solid #FCB02D; margin-bottom: 12px; }
         
-        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr 1fr; } .editor-split { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+        #copyFeedback { display: none; }
+        
+        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } .editor-split { grid-template-columns: 1fr; height: auto; } }
     </style>
 </head>
 <body>
@@ -74,81 +78,94 @@
         <h1>🔐 Habilitation des Agents</h1>
 
         <div class="main-grid">
-            <!-- COLONNE 1 : CONFIG -->
-            <div class="panel">
-                <h2>📋 Configuration</h2>
-                <div id="loadingMessage" class="loading">⏳ Chargement...</div>
-                <div id="errorMessage" style="display: none;"></div>
+            <!-- COLONNE 1 : CONFIG + ÉDITEUR -->
+            <div class="left-column">
+                <!-- CONFIG -->
+                <div class="panel">
+                    <h2>📋 Configuration</h2>
+                    <div id="loadingMessage" class="loading">⏳ Chargement...</div>
+                    <div id="errorMessage" style="display: none;"></div>
 
-                <div id="configSection" style="display: none;">
-                    <div class="form-group">
-                        <label for="projectSelect">Projet :</label>
-                        <select id="projectSelect"></select>
+                    <div id="configSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="projectSelect">Projet :</label>
+                            <select id="projectSelect"></select>
+                        </div>
+
+                        <div id="messageSection" style="display: none;">
+                            <div class="form-group">
+                                <label for="templateSelect">Template :</label>
+                                <select id="templateSelect"></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="subjectText">Objet du mail :</label>
+                                <input type="text" id="subjectText" />
+                            </div>
+
+                            <div class="button-group">
+                                <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
+                                <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div id="messageSection" style="display: none;">
-                        <div class="form-group">
-                            <label for="templateSelect">Template :</label>
-                            <select id="templateSelect"></select>
-                        </div>
+                <!-- ÉDITEUR -->
+                <div class="panel">
+                    <h2>✍️ Rédaction</h2>
+                    <div id="editorSection" style="display: none;">
+                        <div class="editor-split">
+                            <div class="editor-area">
+                                <div class="editor-toolbar">
+                                    <button class="editor-btn" onclick="insertFormat('# ', '')">H1</button>
+                                    <button class="editor-btn" onclick="insertFormat('## ', '')">H2</button>
+                                    <button class="editor-btn" onclick="insertFormat('**', '**')">Gras</button>
+                                    <button class="editor-btn" onclick="insertFormat('*', '*')">Italique</button>
+                                    <button class="editor-btn" onclick="insertFormat('> ', '')">Citation</button>
+                                    <button class="editor-btn" onclick="insertFormat('- ', '')">Liste</button>
+                                    <button class="editor-btn" onclick="insertFormat('[', '](url)')">Lien</button>
+                                    <div style="flex-grow: 1;"></div>
+                                    <button class="editor-btn" onclick="copyMarkdown()" style="background: #4CAF50; color: white; border-color: #4CAF50;">📋</button>
+                                </div>
+                                <textarea id="messageText" class="editor-textarea" placeholder="Tapez ici..."></textarea>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="subjectText">Objet du mail :</label>
-                            <input type="text" id="subjectText" />
+                            <div class="preview-area">
+                                <div class="preview-label">Aperçu :</div>
+                                <div class="preview-frame" id="messagePreview"></div>
+                            </div>
                         </div>
-
-                        <div class="button-group">
-                            <button id="btnSave" class="button btn-primary btn-small" onclick="saveMessage()" style="display: none;">💾 Enregistrer</button>
-                            <button class="button btn-primary btn-small" onclick="saveMessageAs()">💾 Enregistrer sous...</button>
-                        </div>
+                        <div id="copyFeedback" class="success-box">✅ Copié !</div>
                     </div>
                 </div>
             </div>
 
-            <!-- COLONNE 2 : ÉDITEUR -->
-            <div class="panel">
-                <h2>✍️ Rédaction</h2>
-                <div id="editorSection" style="display: none;" class="editor-split">
-                    <div class="editor-area">
-                        <div class="editor-toolbar">
-                            <button class="editor-btn" onclick="insertFormat('# ', '')">H1</button>
-                            <button class="editor-btn" onclick="insertFormat('## ', '')">H2</button>
-                            <button class="editor-btn" onclick="insertFormat('**', '**')">Gras</button>
-                            <button class="editor-btn" onclick="insertFormat('*', '*')">Italique</button>
-                            <button class="editor-btn" onclick="insertFormat('> ', '')">Citation</button>
-                            <button class="editor-btn" onclick="insertFormat('- ', '')">Liste</button>
-                            <button class="editor-btn" onclick="insertFormat('[', '](url)')">Lien</button>
-                            <div style="flex-grow: 1;"></div>
-                            <button class="editor-btn" onclick="copyMarkdown()" style="background: #4CAF50; color: white;">📋 Copier</button>
-                        </div>
-                        <textarea id="messageText" class="editor-textarea" placeholder="Tapez en Markdown ici..."></textarea>
-                    </div>
-
-                    <div class="preview-area">
-                        <div class="preview-label">Aperçu du rendu :</div>
-                        <div class="preview-frame" id="messagePreview"></div>
-                    </div>
-                </div>
-
-                <div id="copyFeedback" style="display: none; margin-top: 10px;" class="success-box">
-                    ✅ Copié !
-                </div>
-            </div>
-
-            <!-- COLONNE 3 : AGENTS -->
-            <div class="panel">
-                <h2>👥 Agents</h2>
-                <div id="noProjectSelected" class="info-box">Sélectionnez un projet</div>
-
-                <div id="contactsSection" style="display: none;">
-                    <div class="info-box">
-                        Total : <span id="contactCount">0</span> | Sélectionnés : <span id="selectedCount">0</span>
-                    </div>
-                    <div class="contacts-list" id="contactsList"></div>
-
+            <!-- COLONNE 2 : ACTIONS MAIL + AGENTS -->
+            <div class="right-column">
+                <!-- ACTIONS MAIL -->
+                <div class="panel">
+                    <h2>📧 Actions Mail</h2>
                     <div id="bulkActionsSection" class="bulk-actions" style="display: none;">
                         <button class="button btn-success btn-small" onclick="sendGroupEmail()">📧 Groupé</button>
                         <button class="button btn-secondary btn-small" onclick="previewEmail()">👁️ Aperçu</button>
+                        <div style="font-size: 11px; margin-top: 8px; color: #666;">
+                            Sélectionnés : <span id="selectedCount">0</span>
+                        </div>
+                    </div>
+                    <div id="noActionSelected" class="info-box">Sélectionnez des agents ci-dessous</div>
+                </div>
+
+                <!-- AGENTS -->
+                <div class="panel">
+                    <h2>👥 Agents</h2>
+                    <div id="noProjectSelected" class="info-box">Sélectionnez un projet</div>
+
+                    <div id="contactsSection" style="display: none;">
+                        <div class="info-box">
+                            Total : <span id="contactCount">0</span>
+                        </div>
+                        <div class="contacts-list" id="contactsList"></div>
                     </div>
                 </div>
             </div>
@@ -265,7 +282,7 @@
                 document.getElementById('subjectText').value = '';
                 document.getElementById('btnSave').style.display = 'none';
                 document.getElementById('messageSection').style.display = 'block';
-                document.getElementById('editorSection').style.display = 'grid';
+                document.getElementById('editorSection').style.display = 'block';
 
                 populateTemplates(projId);
                 displayContacts(projId);
@@ -341,7 +358,7 @@
             navigator.clipboard.writeText(html).then(() => {
                 const fb = document.getElementById('copyFeedback');
                 fb.style.display = 'block';
-                setTimeout(() => fb.style.display = 'none', 3000);
+                setTimeout(() => fb.style.display = 'none', 2000);
             });
         }
 
@@ -366,12 +383,12 @@
                 const hab = c[COL_HABILITATION] || '';
                 const chk = c[COL_HABILITE] === true;
 
-                card.innerHTML = '<div style="flex: 1; display: flex; gap: 10px; align-items: center;">' +
+                card.innerHTML = '<div style="flex: 1; display: flex; gap: 8px; align-items: center;">' +
                     '<input type="checkbox" id="sel-' + c.id + '" ' + (state.selectedContacts.has(c.id) ? 'checked' : '') + ' onchange="toggleSelect(' + c.id + ')">' +
-                    '<div class="contact-info">' +
+                    '<div class="contact-info" style="min-width: 0;">' +
                     '<h3>' + (c.Prénom || '') + ' ' + (c.Nom || '') + '</h3>' +
                     '<p>📧 ' + (c.Mail || 'N/A') + '</p>' +
-                    '<p>Habilitation : ' + hab + '</p>' +
+                    '<p>' + hab + '</p>' +
                     '</div></div>' +
                     '<div class="contact-actions">' +
                     '<input type="checkbox" id="hab-' + c.id + '" ' + (chk ? 'checked' : '') + ' onchange="toggleHab(' + c.id + ')" title="Habilité">' +
@@ -391,6 +408,7 @@
             }
             document.getElementById('selectedCount').textContent = state.selectedContacts.size;
             document.getElementById('bulkActionsSection').style.display = state.selectedContacts.size > 0 ? 'block' : 'none';
+            document.getElementById('noActionSelected').style.display = state.selectedContacts.size > 0 ? 'none' : 'block';
         }
 
         async function toggleHab(id) {
