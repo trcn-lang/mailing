@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Widget Habilitation</title>
+    <script src="https://docs.getgrist.com/embed/grist-plugin-api.js"></script>
     <style>
         * {
             margin: 0;
@@ -104,15 +105,9 @@
             background-color: #0047AB;
         }
         
-        .btn-secondary {
-            background-color: #F5F5F5;
-            color: #3C3C3C;
-            border: 1px solid #E5E5E5;
-            margin-right: 10px;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #E5E5E5;
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
         }
         
         .contacts-list {
@@ -146,11 +141,6 @@
             display: flex;
             gap: 10px;
             align-items: center;
-        }
-        
-        .btn-small {
-            padding: 8px 12px;
-            font-size: 12px;
         }
         
         .checkbox-container {
@@ -204,6 +194,16 @@
             font-size: 13px;
         }
         
+        .error-box {
+            background-color: #FFEBEE;
+            border-left: 4px solid #D32F2F;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #C62828;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px 20px;
@@ -226,24 +226,32 @@
             <div class="panel">
                 <h2>📋 Configuration du Projet</h2>
                 
-                <div class="form-group">
-                    <label for="projectSelect">Sélectionner un projet :</label>
-                    <select id="projectSelect">
-                        <option value="">-- Choisir un projet --</option>
-                    </select>
+                <div id="loadingMessage" class="loading">
+                    ⏳ Chargement des données Grist...
                 </div>
                 
-                <div id="messageSection" style="display: none;">
+                <div id="errorMessage" style="display: none;"></div>
+                
+                <div id="configSection" style="display: none;">
                     <div class="form-group">
-                        <label for="messageText">Message HTML à envoyer :</label>
-                        <textarea id="messageText" placeholder="Message HTML..."></textarea>
+                        <label for="projectSelect">Sélectionner un projet :</label>
+                        <select id="projectSelect">
+                            <option value="">-- Choisir un projet --</option>
+                        </select>
                     </div>
                     
-                    <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
-                    
-                    <div class="preview-section">
-                        <h3>Aperçu du message :</h3>
-                        <div class="preview-frame" id="messagePreview"></div>
+                    <div id="messageSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="messageText">Message HTML à envoyer :</label>
+                            <textarea id="messageText" placeholder="Message HTML..."></textarea>
+                        </div>
+                        
+                        <button class="button btn-primary" onclick="saveMessage()">💾 Enregistrer le message</button>
+                        
+                        <div class="preview-section">
+                            <h3>Aperçu du message :</h3>
+                            <div class="preview-frame" id="messagePreview"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -268,69 +276,96 @@
     </div>
     
     <script>
-        // État du widget
         let state = {
             projects: [],
             contacts: [],
             currentProject: null,
-            messages: {}
+            gristReady: false
         };
         
-        // Initialisation
-        async function init() {
-            console.log("Initialisation du widget...");
-            console.log("window.grist disponible ?", !!window.grist);
+        // Initialiser Grist
+        async function initGrist() {
+            console.log("Initialisation Grist...");
             
-            // Grist API
-            if (window.grist) {
-                try {
-                    console.log("Grist API détectée, appel grist.ready()");
-                    await grist.ready();
-                    console.log("grist.ready() effectué");
+            try {
+                // Appeler grist.ready
+                await grist.ready({ requiredAccess: 'read table' });
+                console.log("grist.ready() appelé avec succès");
+                
+                state.gristReady = true;
+                
+                // Essayer de récupérer les tables
+                console.log("Tentative de récupération des tables via RPC...");
+                
+                // Utiliser rpc.getTable si disponible
+                if (grist.rpc && grist.rpc.getTable) {
+                    console.log("Utilisation de grist.rpc.getTable");
+                    const projects = await grist.rpc.getTable('Projet-_Mailing-Projets');
+                    const contacts = await grist.rpc.getTable('Projet-_Mailing-Contacts');
                     
-                    // Utiliser l'API synchrone de Grist pour les custom widgets
-                    console.log("Récupération des tables...");
-                    const projectsData = await grist.docApi.fetchTable('Projet-_Mailing-Projets');
-                    const contactsData = await grist.docApi.fetchTable('Projet-_Mailing-Contacts');
+                    console.log("Projets:", projects);
+                    console.log("Contacts:", contacts);
                     
-                    console.log("Projets reçus :", projectsData);
-                    console.log("Contacts reçus :", contactsData);
-                    
-                    state.projects = projectsData;
-                    state.contacts = contactsData;
-                    
-                    // Remplir la liste des projets
-                    populateProjectSelect();
-                    
-                } catch (error) {
-                    console.error("Erreur lors du chargement des données :", error);
-                    console.error("Stack trace :", error.stack);
-                    document.getElementById('noProjectSelected').innerText = 
-                        "Erreur : " + error.message + ". Essai du mode démo...";
-                    
-                    // Fallback sur les données de démo
-                    setTimeout(() => loadDemoData(), 1000);
+                    loadData(projects, contacts);
+                } else {
+                    console.warn("grist.rpc.getTable non disponible, essai alternatif...");
+                    // Fallback: charger les données via une API externe ou demo
+                    loadDemoData();
                 }
-            } else {
-                console.warn("Grist API non disponible - utilisation des données de démo");
-                loadDemoData();
+                
+            } catch (error) {
+                console.error("Erreur Grist:", error);
+                console.error("Stack:", error.stack);
+                
+                // Fallback sur démo
+                showError("Erreur de connexion Grist: " + error.message + ". Chargement en mode démo...");
+                setTimeout(() => loadDemoData(), 2000);
             }
         }
         
-        // Données de démo (pour tester sans Grist)
+        // Charger les données
+        function loadData(projectsArray, contactsArray) {
+            console.log("Chargement des données...");
+            
+            state.projects = projectsArray || [];
+            state.contacts = contactsArray || [];
+            
+            console.log("Projets chargés:", state.projects.length);
+            console.log("Contacts chargés:", state.contacts.length);
+            
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('configSection').style.display = 'block';
+            
+            populateProjectSelect();
+        }
+        
+        // Charger les données de démo
         function loadDemoData() {
+            console.log("Chargement des données de démo...");
+            
             state.projects = [
-                { id: 1, Projet: 'Projet A', Message_HTML: '<h1>Bienvenue au Projet A</h1>' },
-                { id: 2, Projet: 'Projet B', Message_HTML: '<h1>Bienvenue au Projet B</h1>' }
+                { id: 1, Projet: 'Projet A', Message_HTML: '<h1>Bienvenue au Projet A</h1><p>Ceci est un message de démo.</p>' },
+                { id: 2, Projet: 'Projet B', Message_HTML: '<h1>Bienvenue au Projet B</h1><p>Ceci est un message de démo.</p>' }
             ];
             
             state.contacts = [
-                { id: 1, Nom: 'MARTIN', Prénom: 'Jean', Email: 'jean.martin@example.com', Projet: 'Projet A', Habilité: false },
-                { id: 2, Nom: 'DUPONT', Prénom: 'Marie', Email: 'marie.dupont@example.com', Projet: 'Projet A', Habilité: false },
-                { id: 3, Nom: 'DURAND', Prénom: 'Paul', Email: 'paul.durand@example.com', Projet: 'Projet B', Habilité: false }
+                { id: 1, Nom: 'MARTIN', Prénom: 'Jean', Mail: 'jean.martin@example.com', Projet: 'Projet A', Structure: 'Siège', Fonction: 'Chef', 'Habilitation accordée': 'En attente' },
+                { id: 2, Nom: 'DUPONT', Prénom: 'Marie', Mail: 'marie.dupont@example.com', Projet: 'Projet A', Structure: 'Antenne', Fonction: 'Adjoint', 'Habilitation accordée': 'En attente' },
+                { id: 3, Nom: 'DURAND', Prénom: 'Paul', Mail: 'paul.durand@example.com', Projet: 'Projet B', Structure: 'Siège', Fonction: 'Agent', 'Habilitation accordée': 'Niveau 1' }
             ];
             
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('configSection').style.display = 'block';
+            
             populateProjectSelect();
+        }
+        
+        // Afficher une erreur
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.className = 'error-box';
+            errorDiv.innerHTML = '❌ ' + message;
+            errorDiv.style.display = 'block';
         }
         
         // Remplir le dropdown des projets
@@ -347,30 +382,48 @@
         }
         
         // Changement de projet
-        document.getElementById('projectSelect').addEventListener('change', function(e) {
-            const projectName = e.target.value;
-            
-            if (!projectName) {
-                state.currentProject = null;
-                document.getElementById('messageSection').style.display = 'none';
-                document.getElementById('contactsSection').style.display = 'none';
-                document.getElementById('noProjectSelected').style.display = 'block';
-                return;
-            }
-            
-            state.currentProject = state.projects.find(p => (p.Projet || p.id) === projectName);
-            
-            if (state.currentProject) {
-                // Afficher le message
-                document.getElementById('messageText').value = state.currentProject.Message_HTML || '';
-                updateMessagePreview();
-                document.getElementById('messageSection').style.display = 'block';
-                document.getElementById('noProjectSelected').style.display = 'none';
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('projectSelect').addEventListener('change', function(e) {
+                const projectName = e.target.value;
                 
-                // Afficher les contacts du projet
-                displayContacts(projectName);
-            }
+                if (!projectName) {
+                    state.currentProject = null;
+                    document.getElementById('messageSection').style.display = 'none';
+                    document.getElementById('contactsSection').style.display = 'none';
+                    document.getElementById('noProjectSelected').style.display = 'block';
+                    return;
+                }
+                
+                state.currentProject = state.projects.find(p => (p.Projet || p.id) === projectName);
+                
+                if (state.currentProject) {
+                    document.getElementById('messageText').value = state.currentProject.Message_HTML || '';
+                    updateMessagePreview();
+                    document.getElementById('messageSection').style.display = 'block';
+                    document.getElementById('noProjectSelected').style.display = 'none';
+                    
+                    displayContacts(projectName);
+                }
+            });
+            
+            // Gestion du préview
+            document.getElementById('messageText').addEventListener('input', updateMessagePreview);
+            
+            // Initialiser
+            initGrist();
         });
+        
+        // Mettre à jour l'aperçu du message
+        function updateMessagePreview() {
+            const messageText = document.getElementById('messageText').value;
+            const preview = document.getElementById('messagePreview');
+            
+            if (messageText.trim().startsWith('<')) {
+                preview.innerHTML = messageText;
+            } else {
+                preview.innerHTML = `<p>${messageText.replace(/\n/g, '<br>')}</p>`;
+            }
+        }
         
         // Afficher les contacts du projet sélectionné
         function displayContacts(projectName) {
@@ -393,13 +446,12 @@
                 const card = document.createElement('div');
                 card.className = 'contact-card';
                 
-                // Déterminer l'état "habilité"
                 const isHabilite = contact['Habilitation accordée'] && contact['Habilitation accordée'] !== 'En attente';
                 
                 card.innerHTML = `
                     <div class="contact-info">
                         <h3>${contact.Prénom || ''} ${contact.Nom || ''}</h3>
-                        <p>📧 ${contact.Mail || contact.Email || 'N/A'}</p>
+                        <p>📧 ${contact.Mail || 'N/A'}</p>
                         <p>🏢 ${contact.Structure || 'N/A'} - ${contact.Fonction || 'N/A'}</p>
                     </div>
                     <div class="contact-actions">
@@ -408,7 +460,7 @@
                                    onchange="toggleHabilite(${contact.id})">
                             <label for="check-${contact.id}">Habilité</label>
                         </div>
-                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Mail || contact.Email}', '${contact.Prénom}')">
+                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Mail}', '${contact.Prénom}')">
                             📧 Envoyer
                         </button>
                     </div>
@@ -417,18 +469,15 @@
             });
         }
         
-        // Mettre à jour l'aperçu du message
-        function updateMessagePreview() {
-            const messageText = document.getElementById('messageText').value;
-            const preview = document.getElementById('messagePreview');
+        // Envoyer un email
+        function sendEmail(email, prenom) {
+            const message = document.getElementById('messageText').value;
             
-            if (messageText.trim().startsWith('<')) {
-                // C'est du HTML
-                preview.innerHTML = messageText;
-            } else {
-                // C'est du texte brut
-                preview.innerHTML = `<p>${messageText.replace(/\n/g, '<br>')}</p>`;
-            }
+            const subject = encodeURIComponent('Habilitation Agent');
+            const body = encodeURIComponent(message);
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+            
+            window.open(mailtoLink);
         }
         
         // Enregistrer le message
@@ -439,37 +488,22 @@
             
             state.currentProject.Message_HTML = messageText;
             
-            // Envoyer à Grist pour mise à jour
-            if (window.grist) {
+            if (state.gristReady && grist.rpc && grist.rpc.applyUserActions) {
                 try {
-                    await grist.docApi.applyUserActions([[
+                    await grist.rpc.applyUserActions([[
                         'UpdateRecord', 'Projet-_Mailing-Projets', state.currentProject.id, 
                         { 'Message_HTML': messageText }
                     ]]);
                     alert('✅ Message enregistré !');
                 } catch (error) {
-                    console.error("Erreur lors de l'enregistrement :", error);
-                    alert('❌ Erreur lors de l\'enregistrement : ' + error.message);
+                    alert('❌ Erreur: ' + error.message);
                 }
             } else {
-                alert('✅ Message enregistré (mode démo)');
+                alert('✅ Message modifié (non sauvegardé - mode démo)');
             }
         }
         
-        // Envoyer un email
-        function sendEmail(email, prenom) {
-            const message = document.getElementById('messageText').value;
-            
-            // Créer le lien mailto
-            const subject = encodeURIComponent('Habilitation Agent');
-            const body = encodeURIComponent(message);
-            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-            
-            window.open(mailtoLink);
-            alert(`📧 Email ouvert pour ${prenom}. Veuillez l'envoyer manuellement.`);
-        }
-        
-        // Mettre à jour le statut "Habilité"
+        // Mettre à jour le statut
         function toggleHabilite(contactId) {
             const contact = state.contacts.find(c => c.id === contactId);
             if (contact) {
@@ -478,31 +512,19 @@
                 
                 contact['Habilitation accordée'] = newStatus;
                 
-                // Envoyer à Grist
-                if (window.grist) {
+                if (state.gristReady && grist.rpc && grist.rpc.applyUserActions) {
                     try {
-                        grist.docApi.applyUserActions([[
+                        grist.rpc.applyUserActions([[
                             'UpdateRecord', 'Projet-_Mailing-Contacts', contactId,
                             { 'Habilitation accordée': newStatus }
                         ]]);
-                        console.log("Statut mis à jour pour contact", contactId, ":", newStatus);
+                        console.log("Statut mis à jour:", newStatus);
                     } catch (error) {
-                        console.error("Erreur lors de la mise à jour :", error);
+                        console.error("Erreur:", error);
                     }
                 }
             }
         }
-        
-        // Gestion du préview du message en temps réel
-        document.addEventListener('DOMContentLoaded', function() {
-            const textarea = document.getElementById('messageText');
-            if (textarea) {
-                textarea.addEventListener('input', updateMessagePreview);
-            }
-        });
-        
-        // Initialiser au chargement
-        window.addEventListener('load', init);
     </script>
 </body>
 </html>
