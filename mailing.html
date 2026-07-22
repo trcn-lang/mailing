@@ -591,58 +591,69 @@
             const message = document.getElementById('messageText').value;
             const subject = document.getElementById('subjectText').value;
             
-            // Ouvrir un aperçu HTML dans une nouvelle fenêtre
+            // Créer une nouvelle fenêtre pour l'aperçu
             const previewWindow = window.open('', 'preview', 'width=800,height=600');
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html lang="fr">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${subject}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-                        .container { background: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
-                        .header { border-bottom: 2px solid #000091; padding-bottom: 15px; margin-bottom: 20px; }
-                        .subject { font-size: 18px; font-weight: bold; color: #000091; }
-                        .content { line-height: 1.6; color: #333; }
-                        .actions { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
-                        button { padding: 10px 20px; margin-right: 10px; cursor: pointer; border: none; border-radius: 4px; }
-                        .btn-copy { background: #4CAF50; color: white; }
-                        .btn-copy:hover { background: #45a049; }
-                        .code-block { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: monospace; font-size: 12px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <div class="subject">Objet : ${subject}</div>
-                        </div>
-                        <div class="content">
-                            ${message}
-                        </div>
-                        <div class="actions">
-                            <button class="btn-copy" onclick="copyHTML()">📋 Copier le HTML</button>
-                            <p style="font-size: 12px; color: #666;">
-                                ✅ Vous pouvez copier le HTML ci-dessus et le coller dans votre messagerie (Insérer → HTML).
-                            </p>
-                        </div>
-                        <div class="code-block" id="htmlCode" style="display: none;">
-                            <strong>Code HTML :</strong><br>
-                            <textarea style="width: 100%; height: 200px; font-family: monospace;">${message}</textarea>
-                        </div>
-                    </div>
-                    <script>
-                        function copyHTML() {
-                            const textarea = document.querySelector('textarea');
-                            textarea.select();
-                            document.execCommand('copy');
-                            alert('✅ HTML copié dans le presse-papiers !');
-                        }
-                    </script>
-                </body>
-                </html>
-            `;
+            
+            // Construire le HTML sans template strings pour éviter les conflits
+            let htmlContent = '<!DOCTYPE html>\n';
+            htmlContent += '<html lang="fr">\n';
+            htmlContent += '<head>\n';
+            htmlContent += '    <meta charset="UTF-8">\n';
+            htmlContent += '    <title>' + escapeHtml(subject) + '</title>\n';
+            htmlContent += '    <style>\n';
+            htmlContent += '        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n';
+            htmlContent += '        .container { background: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; }\n';
+            htmlContent += '        .header { border-bottom: 2px solid #000091; padding-bottom: 15px; margin-bottom: 20px; }\n';
+            htmlContent += '        .subject { font-size: 18px; font-weight: bold; color: #000091; }\n';
+            htmlContent += '        .content { line-height: 1.6; color: #333; }\n';
+            htmlContent += '        .actions { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }\n';
+            htmlContent += '        button { padding: 10px 20px; margin-right: 10px; cursor: pointer; border: none; border-radius: 4px; }\n';
+            htmlContent += '        .btn-copy { background: #4CAF50; color: white; }\n';
+            htmlContent += '        .btn-copy:hover { background: #45a049; }\n';
+            htmlContent += '    </style>\n';
+            htmlContent += '</head>\n';
+            htmlContent += '<body>\n';
+            htmlContent += '    <div class="container">\n';
+            htmlContent += '        <div class="header">\n';
+            htmlContent += '            <div class="subject">Objet : ' + escapeHtml(subject) + '</div>\n';
+            htmlContent += '        </div>\n';
+            htmlContent += '        <div class="content">\n';
+            htmlContent += message + '\n';
+            htmlContent += '        </div>\n';
+            htmlContent += '        <div class="actions">\n';
+            htmlContent += '            <button class="btn-copy" onclick="copyHTML()">📋 Copier le HTML</button>\n';
+            htmlContent += '            <p style="font-size: 12px; color: #666;">\n';
+            htmlContent += '                ✅ Vous pouvez copier le HTML ci-dessus et le coller dans votre messagerie (Insérer → HTML).\n';
+            htmlContent += '            </p>\n';
+            htmlContent += '        </div>\n';
+            htmlContent += '    </div>\n';
+            htmlContent += '    <script>\n';
+            htmlContent += '        function copyHTML() {\n';
+            htmlContent += '            const container = document.querySelector(".content");\n';
+            htmlContent += '            const range = document.createRange();\n';
+            htmlContent += '            range.selectNodeContents(container);\n';
+            htmlContent += '            const selection = window.getSelection();\n';
+            htmlContent += '            selection.removeAllRanges();\n';
+            htmlContent += '            selection.addRange(range);\n';
+            htmlContent += '            document.execCommand("copy");\n';
+            htmlContent += '            alert("✅ HTML copié dans le presse-papiers !");\n';
+            htmlContent += '        }\n';
+            htmlContent += '    </script>\n';
+            htmlContent += '</body>\n';
+            htmlContent += '</html>\n';
+            
             previewWindow.document.write(htmlContent);
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         function sendGroupEmail() {
