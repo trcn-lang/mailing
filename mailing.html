@@ -535,7 +535,7 @@
                                    onchange="toggleHabilite(${contact.id})">
                             <label for="check-${contact.id}">Habilité</label>
                         </div>
-                        <button class="button btn-small btn-primary" onclick="sendEmail('${contact.Mail}', '${(contact['Prénom']||'').replace(/'/g,"\\'")}')">
+                        <button class="button btn-small btn-primary" onclick="sendEmailForContact(${contact.id})">
                             📧 Envoyer
                         </button>
                         <button class="button btn-small btn-secondary" onclick="previewAndSend()">
@@ -585,6 +585,13 @@
             // Envoyer le contenu HTML directement (Option B)
             const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
             window.open(mailtoLink);
+        }
+
+        function sendEmailForContact(contactId) {
+            const contact = state.contacts.find(c => c.id === contactId);
+            if (contact) {
+                sendEmail(contact.Mail, contact['Prénom'] || '');
+            }
         }
 
         function previewAndSend() {
