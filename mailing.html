@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Widget Habilitation</title>
-    <script src="https://docs.getgrist.com/embed/grist-plugin-api.js"></script>
+    <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -166,8 +166,20 @@
         async function initGrist() {
             console.log("Initialisation Grist...");
 
+            // Attendre que le script grist-plugin-api.js soit chargé (max ~3s)
+            let attempts = 0;
+            while (!window.grist && attempts < 30) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+
             if (!window.grist) {
-                showError("L'API Grist n'est pas chargée. Ce widget doit être ouvert depuis Grist (custom widget).");
+                showError(
+                    "L'API Grist (window.grist) n'a pas pu être chargée depuis " +
+                    "https://grist.numerique.gouv.fr/grist-plugin-api.js. " +
+                    "Vérifiez que ce widget est bien ouvert en tant que Custom Widget dans Grist, " +
+                    "et que l'URL du script correspond à votre instance Grist."
+                );
                 return;
             }
 
